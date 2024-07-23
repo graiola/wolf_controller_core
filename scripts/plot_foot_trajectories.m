@@ -1,0 +1,47 @@
+clear all
+close all
+
+load rt_logger_TrajectoryInterface_position_reference_lf_position_reference_lf
+load rt_logger_TrajectoryInterface_position_reference_rh_position_reference_rh
+load rt_logger_TrajectoryInterface_position_reference_lh_position_reference_lh
+load rt_logger_TrajectoryInterface_position_reference_rf_position_reference_rf
+load rt_logger_TrajectoryInterface_position_reference_lf_time
+load rt_logger_TrajectoryInterface_position_reference_rh_time
+load rt_logger_TrajectoryInterface_position_reference_lh_time
+load rt_logger_TrajectoryInterface_position_reference_rf_time
+
+load rt_logger_TrajectoryInterface_velocity_reference_lf_velocity_reference_lf
+load rt_logger_TrajectoryInterface_velocity_reference_rh_velocity_reference_rh
+load rt_logger_TrajectoryInterface_velocity_reference_lh_velocity_reference_lh
+load rt_logger_TrajectoryInterface_velocity_reference_rf_velocity_reference_rf
+load rt_logger_TrajectoryInterface_velocity_reference_lf_time
+load rt_logger_TrajectoryInterface_velocity_reference_rh_time
+load rt_logger_TrajectoryInterface_velocity_reference_lh_time
+load rt_logger_TrajectoryInterface_velocity_reference_rf_time
+
+
+foot_lf_xyz = rt_logger_TrajectoryInterface_position_reference_lf_position_reference_lf;
+foot_rh_xyz = rt_logger_TrajectoryInterface_position_reference_rh_position_reference_rh;
+foot_lh_xyz = rt_logger_TrajectoryInterface_position_reference_lh_position_reference_lh;
+foot_rf_xyz = rt_logger_TrajectoryInterface_position_reference_rf_position_reference_rf;
+
+foot_lf_xyz_dot = rt_logger_TrajectoryInterface_velocity_reference_lf_velocity_reference_lf;
+foot_rh_xyz_dot = rt_logger_TrajectoryInterface_velocity_reference_rh_velocity_reference_rh;
+foot_lh_xyz_dot = rt_logger_TrajectoryInterface_velocity_reference_lh_velocity_reference_lh;
+foot_rf_xyz_dot = rt_logger_TrajectoryInterface_velocity_reference_rf_velocity_reference_rf;
+
+t1 = rt_logger_TrajectoryInterface_position_reference_lf_time;
+t2 = rt_logger_TrajectoryInterface_position_reference_rh_time;
+t3 = rt_logger_TrajectoryInterface_position_reference_lh_time;
+t4 = rt_logger_TrajectoryInterface_position_reference_rf_time;
+
+figure(1)
+hold on
+plot3(foot_lf_xyz(:,1),foot_lf_xyz(:,2),foot_lf_xyz(:,3),'r')
+plot3(foot_rh_xyz(:,1),foot_rh_xyz(:,2),foot_rh_xyz(:,3),'b')
+plot3(foot_lh_xyz(:,1),foot_lh_xyz(:,2),foot_lh_xyz(:,3),'b')
+plot3(foot_rf_xyz(:,1),foot_rf_xyz(:,2),foot_rf_xyz(:,3),'r')
+axis equal
+hold off
+
+
