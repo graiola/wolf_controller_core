@@ -93,20 +93,24 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   // Create the robot model
   robot_model_ = std::make_shared<wolf_wbid::QuadrupedRobot>(robot_name,urdf,srdf);
   joint_names_ = robot_model_->getJointNames();
+  n_joints_    = robot_model_->getJointNum();
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Number of joints: "<<n_joints_);
+
   _robot_model_name = robot_model_->getRobotModelName();
 
   // Resize the variables
-  joint_positions_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  joint_positions_init_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  joint_velocities_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  joint_velocities_filt_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  joint_accellerations_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  joint_efforts_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  des_joint_positions_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  des_joint_velocities_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  des_joint_efforts_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  des_joint_efforts_solver_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
-  des_joint_efforts_impedance_.resize(static_cast<Eigen::Index>(joint_states_.size()+FLOATING_BASE_DOFS));
+  joint_positions_.resize(static_cast<Eigen::Index>(n_joints_));
+  joint_positions_init_.resize(static_cast<Eigen::Index>(n_joints_));
+  joint_velocities_.resize(static_cast<Eigen::Index>(n_joints_));
+  joint_velocities_filt_.resize(static_cast<Eigen::Index>(n_joints_));
+  joint_accellerations_.resize(static_cast<Eigen::Index>(n_joints_));
+  joint_efforts_.resize(static_cast<Eigen::Index>(n_joints_));
+  des_joint_positions_.resize(static_cast<Eigen::Index>(n_joints_));
+  des_joint_velocities_.resize(static_cast<Eigen::Index>(n_joints_));
+  des_joint_efforts_.resize(static_cast<Eigen::Index>(n_joints_));
+  des_joint_efforts_solver_.resize(static_cast<Eigen::Index>(n_joints_));
+  des_joint_efforts_impedance_.resize(static_cast<Eigen::Index>(n_joints_));
   des_contact_forces_.resize(robot_model_->getContactNames().size(),Eigen::Vector6d::Zero());
   des_contact_states_.resize(robot_model_->getContactNames().size(),false);
 
@@ -150,32 +154,6 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   for(unsigned int i=0;i<joint_velocities_.size();i++)
     velocity_lims_failures_cnt_.push_back(std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_))));
 
-  std::string input_device = "ps3";
-  nh_.getParam("input_device",input_device);
-  if(input_device == "ps3")
-    devices_.addDevice(DevicesHandler::priority_t::MEDIUM,std::make_shared<Ps3JoyHandler>(controller_nh,this)); // Ps3 joy
-  else if(input_device == "xbox")
-    devices_.addDevice(DevicesHandler::priority_t::MEDIUM,std::make_shared<XboxJoyHandler>(controller_nh,this)); // Xbox joy
-  else if(input_device == "spacemouse")
-    devices_.addDevice(DevicesHandler::priority_t::MEDIUM,std::make_shared<SpaceJoyHandler>(controller_nh,this)); // Space joy
-  else if(input_device == "keyboard")
-    devices_.addDevice(DevicesHandler::priority_t::MEDIUM,std::make_shared<KeyboardHandler>(controller_nh,this)); // Keyboard
-  devices_.addDevice(DevicesHandler::priority_t::HIGH,std::make_shared<TwistHandler>(controller_nh,this,"priority_twist")); // Twist
-  devices_.addDevice(DevicesHandler::priority_t::LOW,std::make_shared<TwistHandler>(controller_nh,this,"twist")); // Twist
-
-  RtLogger::getLogger().addPublisher(TOPIC(imu_gyroscope)               ,imu_gyroscope_);
-  RtLogger::getLogger().addPublisher(TOPIC(imu_gyroscope_filt)          ,imu_gyroscope_filt_);
-  RtLogger::getLogger().addPublisher(TOPIC(des_joint_positions)         ,des_joint_positions_);
-  RtLogger::getLogger().addPublisher(TOPIC(joint_positions)             ,joint_positions_);
-  RtLogger::getLogger().addPublisher(TOPIC(des_joint_velocities)        ,des_joint_velocities_);
-  RtLogger::getLogger().addPublisher(TOPIC(joint_velocities)            ,joint_velocities_);
-  RtLogger::getLogger().addPublisher(TOPIC(joint_velocities_filt)       ,joint_velocities_filt_);
-  RtLogger::getLogger().addPublisher(TOPIC(des_joint_efforts_solver)    ,des_joint_efforts_solver_);
-  RtLogger::getLogger().addPublisher(TOPIC(des_joint_efforts_impedance) ,des_joint_efforts_impedance_);
-  RtLogger::getLogger().addPublisher(TOPIC(des_joint_efforts)           ,des_joint_efforts_);
-  RtLogger::getLogger().addPublisher(TOPIC(joint_efforts)               ,joint_efforts_);
-  RtLogger::getLogger().addPublisher(TOPIC(period)                      ,period_);
-
 #ifdef RT_GUI
   // create interface
   RtGuiClient::getIstance().addLabel(std::string(wolf_controller::_rt_gui_group),std::string("Control mode"),&mode_string_);
@@ -188,7 +166,6 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
 bool ControllerCore::setFrictionConesMu(const double& mu)
 {
-
   if(id_prob_)
   {
     if(mu>=0.0 && mu<=1.0)
@@ -398,7 +375,7 @@ bool ControllerCore::setDutyFactor(const double& duty_factor)
   }
 }
 
-void ControllerCore::readJoints()
+void ControllerCore::setJointState(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel, const Eigen::VectorXd& acc, const Eigen::VectorXd& effort)
 {
   joint_positions_.setZero(joint_positions_.size());
   joint_velocities_.setZero(joint_positions_.size());
@@ -406,43 +383,34 @@ void ControllerCore::readJoints()
   joint_accellerations_.setZero(joint_positions_.size());
   joint_efforts_.setZero(joint_positions_.size());
 
-  for (unsigned int i = 0; i < joint_states_.size(); i++)
+  for (int i = 0; i < n_joints_; i++)
   {
-    joint_positions_(i+FLOATING_BASE_DOFS) = joint_states_[i].getPosition();
-    joint_velocities_(i+FLOATING_BASE_DOFS) = joint_states_[i].getVelocity();
-    joint_accellerations_(i+FLOATING_BASE_DOFS) = 0.0; // FIXME
-    joint_efforts_(i+FLOATING_BASE_DOFS) = joint_states_[i].getEffort();
+    joint_positions_(i+FLOATING_BASE_DOFS) = pos(i);
+    joint_velocities_(i+FLOATING_BASE_DOFS) = vel(i);
+    joint_accellerations_(i+FLOATING_BASE_DOFS) = acc(i);
+    joint_efforts_(i+FLOATING_BASE_DOFS) = effort(i);
   }
 
   // Filter the qdot
   joint_velocities_filt_ = qdot_filter_.process(joint_velocities_);
 }
 
-void ControllerCore::readImu()
+void ControllerCore::setImu(const Eigen::Quaterniond& q,
+                            const Eigen::Vector3d& gyro,
+                            const Eigen::Vector3d& acc)
 {
-  imu_accelerometer_ = Eigen::Map<const Eigen::Vector3d>(imu_sensor_.getLinearAcceleration());
-  imu_gyroscope_     = Eigen::Map<const Eigen::Vector3d>(imu_sensor_.getAngularVelocity());
-  imu_orientation_.w() = imu_sensor_.getOrientation()[0];
-  imu_orientation_.x() = imu_sensor_.getOrientation()[1];
-  imu_orientation_.y() = imu_sensor_.getOrientation()[2];
-  imu_orientation_.z() = imu_sensor_.getOrientation()[3];
+  imu_accelerometer_ = acc;
+  imu_gyroscope_     = gyro;
+  imu_orientation_   = q;
 
   // Filter the imu gyroscope and accelerometer
   imu_gyroscope_filt_ = imu_gyroscope_filter_.process(imu_gyroscope_);
   imu_accelerometer_filt_ = imu_accelerometer_filter_.process(imu_accelerometer_);
 }
 
-void ControllerCore::starting()
+Eigen::VectorXd ControllerCore::getJointEffortCmd() const
 {
-  PRINT_INFO_NAMED(CLASS_NAME,"Starting WoLF controller");
-
-  // Read from the hardware interfaces:
-  // 1) Joints
-  readJoints();
-  // 2) IMU
-  readImu();
-
-  PRINT_INFO_NAMED(CLASS_NAME,"Starting WoLF controller completed");
+  return des_joint_efforts_.segment(FLOATING_BASE_DOFS,n_joints_);
 }
 
 void ControllerCore::updateStateEstimator(const double &dt)
@@ -501,7 +469,7 @@ void ControllerCore::updateStateMachine(const double &dt)
   state_machine_->updateStateMachine(dt);
 }
 
-void ControllerCore::init()
+void ControllerCore::reset()
 {
   // State estimator
   // Be sure to start the solver and the contact estimation when the robot is grounded.
@@ -667,19 +635,10 @@ void ControllerCore::update(const double& dt)
 {
   period_ = dt;
 
-  // Update input devices
-  devices_.writeToOutput(period_);
-
   // Reset control values
   des_joint_efforts_impedance_.fill(0.0);
   des_joint_efforts_solver_.fill(0.0);
   des_joint_efforts_.fill(0.0);
-
-  // Read joint values from the hardware interface
-  readJoints();
-
-  // Read IMU values from the hardware interface
-  readImu();
 
   // Update state estimator
   updateStateEstimator(period_);
@@ -695,22 +654,6 @@ void ControllerCore::update(const double& dt)
 
   // Saturate desired joint efforts
   robot_model_->clampJointEfforts(des_joint_efforts_);
-
-  // Write to the hardware interface
-  for (unsigned int i = 0; i < joint_states_.size(); i++)
-    joint_states_[i].setCommand(des_joint_efforts_(i+FLOATING_BASE_DOFS));
-
-  // Publish
-  RtLogger::getLogger().publish(time);
-}
-
-void ControllerCore::stopping()
-{
-  PRINT_INFO_NAMED(CLASS_NAME,"Stopping WoLF controller");
-
-  stopping_ = true;
-
-  PRINT_INFO_NAMED(CLASS_NAME,"Stopping WoLF controller completed");
 }
 
 const string &ControllerCore::getRobotName()
@@ -814,7 +757,7 @@ Impedance* ControllerCore::getImpedance() const
   return impedance_.get();
 }
 
-QuadrupedRobot* ControllerCore::getRobotModel() const
+wolf_wbid::QuadrupedRobot* ControllerCore::getRobotModel() const
 {
   return robot_model_.get();
 }

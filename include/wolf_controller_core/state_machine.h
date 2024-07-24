@@ -15,6 +15,8 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <map>
 #include <atomic>
 
+#include <Eigen/Core>
+
 #include <wolf_controller_utils/tools.h>
 
 namespace wolf_controller {
@@ -45,6 +47,7 @@ public:
   void updateStateMachine(StateMachine* state_machine, const double& dt) override;
   virtual void onEntry(StateMachine* state_machine) override;
   virtual void onExit(StateMachine* state_machine) override;
+private:
   wolf_controller_utils::Ramp::Ptr ramp_;
 };
 
@@ -54,7 +57,14 @@ public:
   void updateStateMachine(StateMachine* state_machine, const double& dt) override;
   virtual void onEntry(StateMachine* state_machine) override;
   virtual void onExit(StateMachine* state_machine) override;
+private:
   wolf_controller_utils::Ramp::Ptr ramp_;
+  Eigen::Vector3d rpy_;
+  Eigen::Matrix3d R_;
+  Eigen::Vector3d vel_;
+  Eigen::Vector3d pos_;
+  double desired_height_;
+  double desired_yaw_;
 };
 
 class ControllerActiveState : public State {
@@ -62,6 +72,11 @@ public:
   void updateStateMachine(StateMachine* state_machine, const double& dt) override;
   virtual void onEntry(StateMachine* state_machine) override;
   virtual void onExit(StateMachine* state_machine) override;
+private:
+  Eigen::Matrix3d R_;
+  Eigen::Vector3d pos_;
+  Eigen::Vector3d vel_;
+
 };
 
 class ControllerStandingDownState : public State {
@@ -70,7 +85,14 @@ public:
   void updateStateMachine(StateMachine* state_machine, const double& dt) override;
   virtual void onEntry(StateMachine* state_machine) override;
   virtual void onExit(StateMachine* state_machine) override;
+private:
   wolf_controller_utils::Ramp::Ptr ramp_;
+  Eigen::Vector3d rpy_;
+  Eigen::Matrix3d R_;
+  Eigen::Vector3d pos_;
+  Eigen::Vector3d vel_;
+  double desired_height_;
+  double stand_down_starting_height_;
 };
 
 class ControllerAnomalyState : public State {

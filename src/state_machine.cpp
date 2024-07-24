@@ -27,7 +27,7 @@ std::string enumToString(StateMachine::states_t state) {
   case StateMachine::ACTIVE:        return "ACTIVE";
   case StateMachine::STANDING_DOWN: return "STANDING_DOWN";
   case StateMachine::ANOMALY:       return "ANOMALY";
-  default:                                          return "UNKNOWN";
+  default:                          return "UNKNOWN";
   }
 }
 
@@ -117,14 +117,14 @@ void ControllerIdleState::updateStateMachine(StateMachine* state_machine, const 
 }
 
 void ControllerIdleState::onEntry(StateMachine* state_machine) {
-  ControllerCore* controller = state_machine->getController();
-  controller->desired_height_ = 0.0;
-  controller->current_rpy_ = controller->robot_model_->getBaseRotationInWorldRPY();
+  //ControllerCore* controller = state_machine->getController();
+  //controller->desired_height_ = 0.0;
+  //controller->current_rpy_ = controller->robot_model_->getBaseRotationInWorldRPY();
 }
 
 void ControllerIdleState::onExit(StateMachine* state_machine) {
   ControllerCore* controller = state_machine->getController();
-  controller->init();
+  controller->reset();
 }
 
 /////////////////////////////////// INIT ///////////////////////////////////////////
@@ -153,7 +153,6 @@ void ControllerInitState::onEntry(StateMachine *state_machine)
 void ControllerInitState::onExit(StateMachine *state_machine)
 {
   ControllerCore* controller = state_machine->getController();
-  controller->desired_yaw_ = controller->robot_model_->getBaseRotationInWorldRPY().z();
   controller->id_prob_->reset();
   ramp_->reset();
 }
@@ -168,17 +167,18 @@ void ControllerStandingUpState::updateStateMachine(StateMachine* state_machine, 
   ControllerCore* controller = state_machine->getController();
   controller->updateWpg(dt);
   double ramp = ramp_->update(dt);
-  controller->desired_height_ = controller->terrain_estimator_->getTerrainPositionWorld().z() +
+  desired_height_ = controller->terrain_estimator_->getTerrainPositionWorld().z() +
       ramp * controller->robot_model_->getStandUpHeight();
   controller->des_joint_positions_ = ramp * controller->robot_model_->getStandUpJointPostion() +
       (1.0 - ramp) * controller->robot_model_->getStandDownJointPostion();
-  controller->tmp_vector3d_ << 0.0, 0.0, controller->desired_yaw_;
-  rpyToRot(controller->tmp_vector3d_, controller->tmp_matrix3d_);
-  controller->tmp_vector3d_ << controller->com_planner_->getComPosition().x(),
-      controller->com_planner_->getComPosition().y(),
-      controller->desired_height_;
-  controller->tmp_vector3d_1_.z() = controller->foot_holds_planner_->getBaseLinearVelocityCmdZ();
-  controller->updateBaseReferences(controller->tmp_vector3d_, controller->tmp_vector3d_1_, controller->tmp_matrix3d_);
+  rpy_ << 0.0, 0.0, desired_yaw_;
+  rpyToRot(rpy_, R_);
+  pos_ << controller->com_planner_->getComPosition().x(),
+          controller->com_planner_->getComPosition().y(),
+          desired_height_;
+  vel_.setZero();
+  vel_.z() = controller->foot_holds_planner_->getBaseLinearVelocityCmdZ();
+  controller->updateBaseReferences(pos_, vel_, R_);
   if (!controller->updateSolver(controller->des_joint_positions_)) {
     state_machine->setCurrentState(StateMachine::ANOMALY);
   } else if (controller->getStateEstimator()->getEstimatedBaseHeight() >= controller->robot_model_->getStandUpHeight()) {
@@ -188,9 +188,13 @@ void ControllerStandingUpState::updateStateMachine(StateMachine* state_machine, 
 
 void ControllerStandingUpState::onEntry(StateMachine *state_machine)
 {
+  R_.setIdentity();
+  rpy_.setZero();
+  vel_.setZero();
+  pos_.setZero();
   ControllerCore* controller = state_machine->getController();
-  controller->tmp_vector3d_.setZero();
-  controller->tmp_vector3d_1_.setZero();
+  desired_yaw_ = controller->robot_model_->getBaseRotationInWorldRPY().z();
+  desired_height_ = 0.0;
 }
 
 void ControllerStandingUpState::onExit(StateMachine *state_machine)
@@ -229,12 +233,12 @@ void ControllerActiveState::updateStateMachine(StateMachine* state_machine, cons
     controller->updateWpg(dt);
     controller->id_prob_->setControlMode(IDProblem::mode_t::WPG);
     controller->previous_mode_ = ControllerCore::mode_t::RESET;
-    controller->tmp_vector3d_ << controller->com_planner_->getComPosition().x(),
-        controller->com_planner_->getComPosition().y(),
-        controller->foot_holds_planner_->getBaseHeight();
-    controller->tmp_matrix3d_ = controller->foot_holds_planner_->getBaseRotationReference();
-    controller->tmp_vector3d_1_.setZero();
-    controller->updateBaseReferences(controller->tmp_vector3d_, controller->tmp_vector3d_1_, controller->tmp_matrix3d_);
+    pos_ << controller->com_planner_->getComPosition().x(),
+            controller->com_planner_->getComPosition().y(),
+            controller->foot_holds_planner_->getBaseHeight();
+    R_ = controller->foot_holds_planner_->getBaseRotationReference();
+    vel_.setZero();
+    controller->updateBaseReferences(pos_, vel_, R_);
     if (controller->getRobotModel()->getCurrentHeight() >= controller->robot_model_->getStandUpHeight()) {
       state_machine->setCurrentState(StateMachine::ACTIVE);
       controller->requested_mode_ = ControllerCore::mode_t::WPG;
@@ -245,14 +249,19 @@ void ControllerActiveState::updateStateMachine(StateMachine* state_machine, cons
   if (!controller->updateSolver(controller->robot_model_->getStandUpJointPostion()) ||
       !controller->performSafetyChecks()) {
     state_machine->setCurrentState(StateMachine::ANOMALY);
-  } else if (controller->posture_ == ControllerCore::posture_t::DOWN) {
-    controller->stand_down_starting_height_ = controller->getRobotModel()->getCurrentHeight(); // FIXME
+  }
+  else if (controller->posture_ == ControllerCore::posture_t::DOWN)
+  {
     state_machine->setCurrentState(StateMachine::STANDING_DOWN);
   }
 }
 
 void ControllerActiveState::onEntry(StateMachine *state_machine)
 {
+  R_.setIdentity();
+  vel_.setZero();
+  pos_.setZero();
+
   ControllerCore* controller = state_machine->getController();
   controller->foot_holds_planner_->reset();
   controller->com_planner_->reset();
@@ -274,28 +283,33 @@ void ControllerStandingDownState::updateStateMachine(StateMachine* state_machine
   ControllerCore* controller = state_machine->getController();
   controller->updateWpg(dt);
   double ramp = ramp_->update(dt);
-  controller->desired_height_ = ramp * controller->stand_down_starting_height_;
+  desired_height_ = ramp * stand_down_starting_height_;
   controller->des_joint_positions_ = (1.0 - ramp) * controller->robot_model_->getStandUpJointPostion() +
       ramp * controller->robot_model_->getStandDownJointPostion();
-  controller->tmp_vector3d_ << 0.0, 0.0, controller->robot_model_->getBaseRotationInWorldRPY().z();
-  rpyToRot(controller->tmp_vector3d_, controller->tmp_matrix3d_);
-  controller->tmp_vector3d_ << controller->com_planner_->getComPosition().x(),
-      controller->com_planner_->getComPosition().y(),
-      controller->desired_height_;
-  controller->tmp_vector3d_1_.z() = -controller->foot_holds_planner_->getBaseLinearVelocityCmdZ();
-  controller->updateBaseReferences(controller->tmp_vector3d_, controller->tmp_vector3d_1_, controller->tmp_matrix3d_);
+  rpy_ << 0.0, 0.0, controller->robot_model_->getBaseRotationInWorldRPY().z();
+  rpyToRot(rpy_, R_);
+  pos_ << controller->com_planner_->getComPosition().x(),
+          controller->com_planner_->getComPosition().y(),
+          desired_height_;
+  vel_.setZero();
+  vel_.z() = -controller->foot_holds_planner_->getBaseLinearVelocityCmdZ();
+  controller->updateBaseReferences(pos_, vel_, R_);
   if (!controller->updateSolver(controller->des_joint_positions_)) {
     state_machine->setCurrentState(StateMachine::ANOMALY);
-  } else if (controller->desired_height_ <= EPS) {
+  } else if (desired_height_ <= EPS) {
     state_machine->setCurrentState(StateMachine::IDLE);
   }
 }
 
 void ControllerStandingDownState::onEntry(StateMachine *state_machine)
 {
+  R_.setIdentity();
+  rpy_.setZero();
+  vel_.setZero();
+  pos_.setZero();
+  desired_height_ = 0.0;
   ControllerCore* controller = state_machine->getController();
-  controller->tmp_vector3d_1_.setZero();
-  controller->tmp_vector3d_.setZero();
+  stand_down_starting_height_ = controller->getRobotModel()->getCurrentHeight();
 }
 
 void ControllerStandingDownState::onExit(StateMachine *state_machine)

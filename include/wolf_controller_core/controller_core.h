@@ -92,21 +92,44 @@ public:
          */
   bool init(const double& period, const std::string& urdf, const std::string& srdf, const std::string& robot_name);
 
-  /**
-         * @brief Starts the controller
-         */
-  void starting();
 
   /**
-         * @brief Updates the controller according to the control period
+         * @brief Updates the controller according to the control period, be sure to setJointState and setImu before calling it
          * @param const double& dt
          */
   void update(const double& dt);
 
   /**
-         * @brief Stops the controller
+         * @brief Reset the controller
          */
-  void stopping();
+  void reset();
+
+  /**
+         * @brief set the joint state
+         * @param Joint positions
+         * @param Joint velocities
+         * @param Joint accelerations
+         * @param Joint efforts
+         */
+  void setJointState(const Eigen::VectorXd& pos,
+                     const Eigen::VectorXd& vel,
+                     const Eigen::VectorXd& acc,
+                     const Eigen::VectorXd& effort);
+
+  /**
+         * @brief set the imu reading
+         * @param orientation
+         * @param gyroscope
+         * @param accelerometer
+         */
+  void setImu(const Eigen::Quaterniond& q,
+              const Eigen::Vector3d& gyro,
+              const Eigen::Vector3d& acc);
+
+  /**
+         * @brief get the command joint efforts (torque)
+         */
+  Eigen::VectorXd getJointEffortCmd() const;
 
   /**
          * @brief get the robot name
@@ -346,10 +369,10 @@ public:
 
 private:
 
+  /** @brief Number of joints */
+  int n_joints_;
   /** @brief Joint names */
   std::vector<std::string> joint_names_;
-  /** @brief Joint states for reading positions, velocities and efforts and writing effort commands */
-  //std::vector<hardware_interface::JointHandle> joint_states_;
   /** @brief Robot name */
   std::string robot_name_;
   /** @brief TF prefix */
@@ -358,12 +381,6 @@ private:
   double period_;
   /** @brief IMU sensor name */
   std::string imu_name_;
-  /** @brief IMU sensors */
-  //hardware_interface::ImuSensorHandle imu_sensor_;
-  /** @brief Ground Thruth */
-  //hardware_interface::GroundTruthHandle ground_truth_;
-  /** @brief Ground Thruth */
-  //std::map<std::string,hardware_interface::ContactSwitchSensorHandle> contact_sensors_;
   /** @brief Joint positions */
   Eigen::VectorXd joint_positions_;
   /** @brief Initial joint positions */
@@ -412,8 +429,6 @@ private:
   GaitGenerator::Ptr gait_generator_;
   /** @brief Terrain Estimator */
   TerrainEstimator::Ptr terrain_estimator_;
-  /** @brief Input devices */
-  DevicesHandler devices_;
   /** @brief Foot holds Planner */
   FootholdsPlanner::Ptr foot_holds_planner_;
   /** @brief CoM Planner */
@@ -437,16 +452,6 @@ private:
   std::atomic<double> vel_roll_;
   std::atomic<double> vel_pitch_;
   std::atomic<double> vel_yaw_;
-  /** @brief Support temporary Affine3d */
-  Eigen::Affine3d tmp_affine3d_;
-  /** @brief Support temporary Vector3d */
-  Eigen::Vector3d tmp_vector3d_;
-  /** @brief Support temporary Vector3d */
-  Eigen::Vector3d tmp_vector3d_1_;
-  /** @brief Support temporary Vector3d */
-  Eigen::Vector3d tmp_vector3d_2_;
-  /** @brief Support temporary Matrix3d */
-  Eigen::Matrix3d tmp_matrix3d_;
   /** @brief Counters used for checks */
   wolf_controller_utils::Counter::Ptr solver_failures_cnt_;
   wolf_controller_utils::Counter::Ptr contact_failures_cnt_;
@@ -457,28 +462,7 @@ private:
   mode_t requested_mode_;
   mode_t previous_mode_;
   posture_t posture_;
-  double stand_down_starting_height_;
-  double desired_height_;
-  Eigen::Vector3d current_rpy_;
-  double desired_yaw_;
-
   std::shared_ptr<StateMachine> state_machine_;
-
-
-  /**
-         * @brief thread body for the odometry publisher
-         */
-  void odomPublisher();
-
-  /**
-         * @brief update the joints state
-         */
-  void readJoints();
-
-  /**
-         * @brief update the imu reading from the imu interface
-         */
-  void readImu();
 
   /**
          * @brief update the state estimator
@@ -503,7 +487,7 @@ private:
          * @param des_joint_positions
          * @return false if the solver failed
          */
-  bool updateSolver(const Eigen::VectorXd &des_joint_positions);
+  bool updateSolver(const Eigen::VectorXd& des_joint_positions);
 
   /**
          * @brief perform an execution step with the impedance
