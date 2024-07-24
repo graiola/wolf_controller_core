@@ -263,7 +263,7 @@ void StateEstimator::setContactState(const std::string &name, const bool &state)
   }
   else
   {
-    ROS_WARN_NAMED(CLASS_NAME,"Wrong contact name!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Wrong contact name!");
   }
 }
 
@@ -298,7 +298,7 @@ void StateEstimator::setContactForce(const std::string& name, const Eigen::Vecto
   }
   else
   {
-    ROS_WARN_NAMED(CLASS_NAME,"Wrong contact name!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Wrong contact name!");
   }
 }
 

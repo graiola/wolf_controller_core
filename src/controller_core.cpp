@@ -63,8 +63,7 @@ std::string enumToString(ControllerCore::mode_t mode)
 }
 
 ControllerCore::ControllerCore()
-  :stopping_(false)
-  ,current_mode_(WPG)
+  :current_mode_(WPG)
   ,requested_mode_(WPG)
   ,previous_mode_(WPG)
   ,posture_(DOWN)
@@ -92,7 +91,6 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
   // Create the robot model
   robot_model_ = std::make_shared<wolf_wbid::QuadrupedRobot>(robot_name,urdf,srdf);
-  joint_names_ = robot_model_->getJointNames();
   n_joints_    = robot_model_->getJointNum();
 
   PRINT_INFO_NAMED(CLASS_NAME,"Number of joints: "<<n_joints_);
@@ -413,7 +411,32 @@ Eigen::VectorXd ControllerCore::getJointEffortCmd() const
   return des_joint_efforts_.segment(FLOATING_BASE_DOFS,n_joints_);
 }
 
-void ControllerCore::updateStateEstimator(const double &dt)
+void ControllerCore::setExtEstimatedState(const Eigen::Vector3d& lin_pos,
+                                          const Eigen::Vector3d& lin_vel,
+                                          const Eigen::Vector3d& lin_acc,
+                                          const Eigen::Quaterniond& q,
+                                          const Eigen::Vector3d& ang_vel)
+{
+  // Linear
+  state_estimator_->setGroundTruthBasePosition(lin_pos);
+  state_estimator_->setGroundTruthBaseLinearVelocity(lin_vel);
+  state_estimator_->setGroundTruthBaseLinearAcceleration(lin_acc);
+  // Orientation
+  state_estimator_->setGroundTruthBaseOrientation(q);
+  state_estimator_->setGroundTruthBaseAngularVelocity(ang_vel);
+}
+
+void ControllerCore::setExtEstimatedContactStates(const std::map<std::string,std::pair<bool,Eigen::Vector3d> >& states)
+{
+  for(const auto& tmp : states)
+  {
+    state_estimator_->setContactForce(tmp.first,tmp.second.second);
+    state_estimator_->setContactState(tmp.first,tmp.second.first);
+  }
+}
+
+
+void ControllerCore::updateStateEstimator(const double& dt)
 {
   state_estimator_->setJointPosition(joint_positions_);
   state_estimator_->setJointVelocity(joint_velocities_filt_);
@@ -421,33 +444,6 @@ void ControllerCore::updateStateEstimator(const double &dt)
   state_estimator_->setImuOrientation(imu_orientation_);
   state_estimator_->setImuGyroscope(imu_gyroscope_filt_);
   state_estimator_->setImuAccelerometer(imu_accelerometer_filt_);
-
-  // Pass ground truth to the state estimator if available
-  if(!ground_truth_.getName().empty())
-  {
-    // Linear
-    state_estimator_->setGroundTruthBasePosition(Eigen::Map<const Eigen::Vector3d>(ground_truth_.getLinearPosition()));
-    state_estimator_->setGroundTruthBaseLinearVelocity(Eigen::Map<const Eigen::Vector3d>(ground_truth_.getLinearVelocity()));
-    state_estimator_->setGroundTruthBaseLinearAcceleration(Eigen::Map<const Eigen::Vector3d>(ground_truth_.getLinearAcceleration()));
-
-    // Orientation
-    ground_truth_orientation_.w() = ground_truth_.getOrientation()[0];
-    ground_truth_orientation_.x() = ground_truth_.getOrientation()[1];
-    ground_truth_orientation_.y() = ground_truth_.getOrientation()[2];
-    ground_truth_orientation_.z() = ground_truth_.getOrientation()[3];
-    state_estimator_->setGroundTruthBaseOrientation(ground_truth_orientation_);
-    state_estimator_->setGroundTruthBaseAngularVelocity(Eigen::Map<const Eigen::Vector3d>(ground_truth_.getAngularVelocity()));
-  }
-
-  if(use_contact_sensors_)
-    for(const auto& tmp : contact_sensors_)
-    {
-      tmp_vector3d_[0] = tmp.second.getForce()[0];
-      tmp_vector3d_[1] = tmp.second.getForce()[1];
-      tmp_vector3d_[2] = tmp.second.getForce()[2];
-      state_estimator_->setContactForce(tmp.first,tmp_vector3d_);
-      //state_estimator_->setContactState(tmp.first,tmp.second.getContactState());
-    }
 
   const std::vector<std::string>& foot_names = robot_model_->getFootNames();
   for(unsigned int i = 0; i<foot_names.size(); i++)

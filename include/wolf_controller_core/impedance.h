@@ -13,7 +13,8 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <memory>
 #include <atomic>
 #include <Eigen/Core>
-#include <wolf_controller/state_estimator.h>
+#include <wolf_controller_core/state_estimator.h>
+#include <wolf_wbid/quadruped_robot.h>
 
 namespace wolf_controller
 {
@@ -35,7 +36,7 @@ public:
    */
   typedef std::shared_ptr<const Impedance> ConstPtr;
 
-  Impedance(StateEstimator::Ptr state_estimator, QuadrupedRobot::Ptr robot_model);
+  Impedance(StateEstimator::Ptr state_estimator, wolf_wbid::QuadrupedRobot::Ptr robot_model);
 
   void update();
 
@@ -71,7 +72,7 @@ private:
   void loadMatrices();
   void loadValues();
 
-  QuadrupedRobot::Ptr robot_model_;
+  wolf_wbid::QuadrupedRobot::Ptr robot_model_;
   StateEstimator::Ptr state_estimator_;
 
   std::atomic<double> kp_swing_haa_;

@@ -18,6 +18,18 @@ else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 nor C++14 support. Please use a different C++ compiler.")
 endif()
 
+# ROS
+find_package(catkin QUIET)
+find_package(ament_cmake QUIET)
+
+if(${catkin_FOUND})
+    catkin_package(INCLUDE_DIRS include LIBRARIES wpg controller_core)
+elseif(${ament_cmake_FOUND})
+    ament_export_include_directories(include)
+    ament_export_libraries(wpg controller_core)
+    ament_package()
+endif()
+
 # Eigen
 find_package(Eigen3 REQUIRED)
 # ADVR Packages
@@ -38,12 +50,6 @@ else()
     message(STATUS "rt_gui not found.")
 endif()
 
-#catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES ${PROJECT_NAME}
-#  CATKIN_DEPENDS wolf_msgs wolf_controller_utils
-#)
-
 include_directories(
     include
     ${EIGEN3_INCLUDE_DIRS}
@@ -57,11 +63,6 @@ include_directories(
     ${ocs2_msgs_INCLUDE_DIRS}
 )
 
-#add_library(ros_wrappers src/ros_wrappers/cartesian.cpp src/ros_wrappers/com.cpp src/ros_wrappers/momentum.cpp
-#    src/ros_wrappers/postural.cpp src/ros_wrappers/wrench.cpp src/ros_wrappers/controller.cpp)
-#target_link_libraries(ros_wrappers ${catkin_LIBRARIES} ${OpenSoT_LIBRARIES}
-#    ${XBotInterface_LIBRARIES} ${rt_gui_LIBRARIES})
-
 add_library(wpg
     src/wpg/com_planner.cpp
     src/wpg/foot_state_machine.cpp
@@ -71,80 +72,24 @@ add_library(wpg
     src/wpg/gait_generator.cpp)
 target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${rt_gui_LIBRARIES})
 
-add_library(wolf_controller_core
+add_library(controller_core
     src/controller_core.cpp
     src/state_machine.cpp
     src/state_estimator.cpp
     src/impedance.cpp
     src/terrain_estimator.cpp
     src/force_estimator.cpp)
-target_link_libraries(wolf_controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES})
+target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES})
 
-#add_executable(plot_node src/plot_node.cpp)
-#target_link_libraries(plot_node ${catkin_LIBRARIES})
 
-#install(DIRECTORY include/${PROJECT_NAME}/
-#        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+install(
+  DIRECTORY include/${PROJECT_NAME}
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+)
 
-#install(TARGETS wpg wolf_controller_core
-#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
-
-#install(FILES controller_plugin.xml
-#DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-#
-#install(DIRECTORY launch/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-#  PATTERN ".svn" EXCLUDE)
-#
-#install(DIRECTORY params/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/params
-#  PATTERN ".svn" EXCLUDE)
-#
-#install(DIRECTORY resources/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources
-#  PATTERN ".svn" EXCLUDE)
-
-#install(DIRECTORY rviz/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz
-#  PATTERN ".svn" EXCLUDE)
-#
-#install(DIRECTORY plotjuggler/
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/plotjuggler
-#  PATTERN ".svn" EXCLUDE)
-#
-#catkin_install_python(PROGRAMS scripts/keyboard_node
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-#if (CATKIN_ENABLE_TESTING)
-#  find_package(catkin REQUIRED COMPONENTS roscpp rostest urdf controller_manager hardware_interface wolf_hardware_interface std_msgs)
-#  find_package(OpenSoT REQUIRED)
-#  include_directories(include ${catkin_INCLUDE_DIRS})
-#
-#  add_library(robot_dummy test/robot_dummy.cpp)
-#  target_link_libraries(robot_dummy ${catkin_LIBRARIES} ${PROJECT_NAME})
-#
-#  add_executable(test_state_estimation test/test_state_estimation.cpp)
-#  target_link_libraries(test_state_estimation ${catkin_LIBRARIES} ${PROJECT_NAME} ${OpenSoT_LIBRARIES})
-#
-#  #add_executable(test_id_problem test/test_id_problem.cpp)
-#  #target_link_libraries(test_id_problem ${catkin_LIBRARIES} ${PROJECT_NAME} gtest)
-#
-#  #add_executable(test_controller test/test_controller.cpp )
-#  #target_link_libraries(test_controller ${catkin_LIBRARIES} ${PROJECT_NAME} gtest robot_dummy)
-#
-#  add_executable(test_trajectory test/test_trajectory.cpp)
-#  target_link_libraries(test_trajectory ${catkin_LIBRARIES} ${PROJECT_NAME} ${OpenSoT_LIBRARIES} gtest)
-#
-#  add_rostest_gtest(test_controller
-#    test/test_controller.test
-#    test/test_controller.cpp)
-#  target_link_libraries(test_controller ${catkin_LIBRARIES} ${PROJECT_NAME} gtest robot_dummy)
-#
-#  add_rostest_gtest(test_id_problem
-#    test/test_id_problem.test
-#    test/test_id_problem.cpp)
-#  target_link_libraries(test_id_problem ${catkin_LIBRARIES} ${PROJECT_NAME} gtest)
-#endif()
+install(
+  TARGETS wpg controller_core
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)

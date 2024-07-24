@@ -127,6 +127,20 @@ public:
               const Eigen::Vector3d& acc);
 
   /**
+         * @brief set an external estimated state for example a ground truth
+         */
+  void setExtEstimatedState(const Eigen::Vector3d& lin_pos,
+                            const Eigen::Vector3d& lin_vel,
+                            const Eigen::Vector3d& lin_acc,
+                            const Eigen::Quaterniond& q,
+                            const Eigen::Vector3d& ang_vel);
+
+  /**
+         * @brief set an external estimated contact state for example from a contact sensor
+         */
+  void setExtEstimatedContactStates(const std::map<std::string,std::pair<bool,Eigen::Vector3d> >& states);
+
+  /**
          * @brief get the command joint efforts (torque)
          */
   Eigen::VectorXd getJointEffortCmd() const;
@@ -371,16 +385,10 @@ private:
 
   /** @brief Number of joints */
   int n_joints_;
-  /** @brief Joint names */
-  std::vector<std::string> joint_names_;
   /** @brief Robot name */
   std::string robot_name_;
-  /** @brief TF prefix */
-  std::string tf_prefix_;
   /** @brief Control period */
   double period_;
-  /** @brief IMU sensor name */
-  std::string imu_name_;
   /** @brief Joint positions */
   Eigen::VectorXd joint_positions_;
   /** @brief Initial joint positions */
@@ -423,8 +431,6 @@ private:
   Eigen::Vector3d imu_gyroscope_filt_;
   /** @brief IMU Orientation */
   Eigen::Quaterniond imu_orientation_;
-  /** @brief Ground Truth Orientation */
-  Eigen::Quaterniond ground_truth_orientation_;
   /** @brief Gait generator */
   GaitGenerator::Ptr gait_generator_;
   /** @brief Terrain Estimator */
@@ -441,10 +447,6 @@ private:
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> imu_gyroscope_filter_;
   /** @brief imu_accelerometer filter */
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> imu_accelerometer_filter_;
-  /** @brief True if the controller uses the external contact sensors */
-  bool use_contact_sensors_;
-  /** @brief True if the controller is stopping */
-  std::atomic<bool> stopping_;
   /** @brief Linear and angular velocities */
   std::atomic<double> vel_x_;
   std::atomic<double> vel_y_;

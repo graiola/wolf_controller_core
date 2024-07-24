@@ -7,6 +7,8 @@
 
 #include "wolf_controller_core/impedance.h"
 
+using namespace wolf_wbid;
+
 namespace wolf_controller {
 
 void Impedance::loadMatrices()
