@@ -60,7 +60,6 @@ include_directories(
     ${wolf_estimation_INCLUDE_DIRS}
     ${wolf_controller_utils_INCLUDE_DIRS}
     ${rt_gui_INCLUDE_DIRS}
-    ${ocs2_msgs_INCLUDE_DIRS}
 )
 
 add_library(wpg
@@ -70,7 +69,7 @@ add_library(wpg
     src/wpg/foot_trajectory_interface.cpp
     src/wpg/footholds_planner.cpp
     src/wpg/gait_generator.cpp)
-target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${rt_gui_LIBRARIES})
+target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES})
 
 add_library(controller_core
     src/controller_core.cpp

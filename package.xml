@@ -12,6 +12,9 @@
     <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
     <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
 
+    <depend>wolf_wbid</depend>
+    <depend>wolf_estimation</depend>
+    <depend>wolf_controller_utils</depend>
     <depend condition="$rt_gui_FOUND == True">rt_gui</depend>
 
     <export>

@@ -92,6 +92,7 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   // Create the robot model
   robot_model_ = std::make_shared<wolf_wbid::QuadrupedRobot>(robot_name,urdf,srdf);
   n_joints_    = robot_model_->getJointNum();
+  joint_names_ = robot_model_->getJointNames();
 
   PRINT_INFO_NAMED(CLASS_NAME,"Number of joints: "<<n_joints_);
 
@@ -156,8 +157,6 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   // create interface
   RtGuiClient::getIstance().addLabel(std::string(wolf_controller::_rt_gui_group),std::string("Control mode"),&mode_string_);
 #endif
-
-  id_prob_->init(robot_name,period_);
 
   return true;
 }
@@ -375,12 +374,11 @@ bool ControllerCore::setDutyFactor(const double& duty_factor)
 
 void ControllerCore::setJointState(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel, const Eigen::VectorXd& acc, const Eigen::VectorXd& effort)
 {
-  joint_positions_.setZero(joint_positions_.size());
-  joint_velocities_.setZero(joint_positions_.size());
-  joint_velocities_filt_.setZero(joint_positions_.size());
-  joint_accellerations_.setZero(joint_positions_.size());
-  joint_efforts_.setZero(joint_positions_.size());
-
+  //joint_positions_.setZero();
+  //joint_velocities_.setZero();
+  //joint_velocities_filt_.setZero();
+  //joint_accellerations_.setZero();
+  //joint_efforts_.setZero();
   for (int i = 0; i < n_joints_; i++)
   {
     joint_positions_(i+FLOATING_BASE_DOFS) = pos(i);
@@ -388,27 +386,48 @@ void ControllerCore::setJointState(const Eigen::VectorXd& pos, const Eigen::Vect
     joint_accellerations_(i+FLOATING_BASE_DOFS) = acc(i);
     joint_efforts_(i+FLOATING_BASE_DOFS) = effort(i);
   }
-
-  // Filter the qdot
-  joint_velocities_filt_ = qdot_filter_.process(joint_velocities_);
 }
 
-void ControllerCore::setImu(const Eigen::Quaterniond& q,
-                            const Eigen::Vector3d& gyro,
-                            const Eigen::Vector3d& acc)
+void ControllerCore::setJointPosition(const unsigned int &i, const double &value)
+{
+  joint_positions_(i) = value;
+}
+
+void ControllerCore::setJointVelocity(const unsigned int &i, const double &value)
+{
+  joint_velocities_(i) = value;
+}
+
+void ControllerCore::setJointAcceleration(const unsigned int &i, const double &value)
+{
+  joint_accellerations_(i) = value;
+}
+
+void ControllerCore::setJointEffort(const unsigned int &i, const double &value)
+{
+  joint_efforts_(i) = value;
+}
+
+void ControllerCore::setImu(const Eigen::Quaterniond& q, const Eigen::Vector3d& gyro, const Eigen::Vector3d& acc)
 {
   imu_accelerometer_ = acc;
   imu_gyroscope_     = gyro;
   imu_orientation_   = q;
-
-  // Filter the imu gyroscope and accelerometer
-  imu_gyroscope_filt_ = imu_gyroscope_filter_.process(imu_gyroscope_);
-  imu_accelerometer_filt_ = imu_accelerometer_filter_.process(imu_accelerometer_);
 }
 
-Eigen::VectorXd ControllerCore::getJointEffortCmd() const
+void ControllerCore::setImuOrientation(const Eigen::Quaterniond& q)
 {
-  return des_joint_efforts_.segment(FLOATING_BASE_DOFS,n_joints_);
+  imu_orientation_ = q;
+}
+
+void ControllerCore::setImuGyroscope(const Eigen::Vector3d& gyro)
+{
+  imu_gyroscope_ = gyro;
+}
+
+void ControllerCore::setImuAccelerometer(const Eigen::Vector3d& acc)
+{
+  imu_accelerometer_ = acc;
 }
 
 void ControllerCore::setExtEstimatedState(const Eigen::Vector3d& lin_pos,
@@ -435,6 +454,11 @@ void ControllerCore::setExtEstimatedContactStates(const std::map<std::string,std
   }
 }
 
+void ControllerCore::setExtEstimatedContactState(const std::string& contact_name, const bool& state, const Eigen::Vector3d& force)
+{
+  state_estimator_->setContactForce(contact_name,force);
+  state_estimator_->setContactState(contact_name,state);
+}
 
 void ControllerCore::updateStateEstimator(const double& dt)
 {
@@ -525,12 +549,12 @@ void ControllerCore::updateWpg(const double &dt)
     if(gait_generator_->isSwinging(foot_names[i]))
     {
       id_prob_->swingWithFoot(foot_names[i],robot_model_->getBaseLinkName());
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Swinging: "<< foot_names[i]);
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Swinging: "<< foot_names[i]);
     }
     else
     {
       id_prob_->stanceWithFoot(foot_names[i],WORLD_FRAME_NAME);
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Stance: "<< foot_names[i]);
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Stance: "<< foot_names[i]);
     }
   }
 }
@@ -561,18 +585,18 @@ bool ControllerCore::performSafetyChecks()
   if(contact_failures_cnt_->upperLimitReached())
   {
     ok = false;
-    ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Lost contacts!");
+    //ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Lost contacts!");
   }
 
   // Check the base orientation
   double roll = robot_model_->getBaseRotationInWorldRPY().x();
   double pitch = robot_model_->getBaseRotationInWorldRPY().y();
   if (roll > M_PI_2 || roll < -M_PI_2) {
-    ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Base roll is beyond limits (-M_PI_2,M_PI_2)");
+    //ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Base roll is beyond limits (-M_PI_2,M_PI_2)");
     ok = false;
   }
   if (pitch > M_PI_2 || pitch < -M_PI_2) {
-    ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Base pitch is beyond limits (-M_PI_2,M_PI_2)");
+    //ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Base pitch is beyond limits (-M_PI_2,M_PI_2)");
     ok = false;
   }
 
@@ -592,7 +616,7 @@ bool ControllerCore::performSafetyChecks()
       {
         ok = false;
         auto names = robot_model_->getEnabledJointNames();
-        ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Reached joint velocity limit "<<names[joints_idx[i]]);
+        //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Reached joint velocity limit "<<names[joints_idx[i]]);
       }
     }
   }
@@ -620,7 +644,7 @@ bool ControllerCore::updateSolver(const Eigen::VectorXd& des_joint_positions)
   // Get the solver solution
   if(!id_prob_->solve(des_joint_efforts_solver_))
   {
-    ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Failed to solve!");
+    //ROS_WARN_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Failed to solve!");
     return false;
   }
   else
@@ -635,6 +659,13 @@ void ControllerCore::update(const double& dt)
   des_joint_efforts_impedance_.fill(0.0);
   des_joint_efforts_solver_.fill(0.0);
   des_joint_efforts_.fill(0.0);
+
+  // Filter the qdot
+  joint_velocities_filt_ = qdot_filter_.process(joint_velocities_);
+
+  // Filter the imu gyroscope and accelerometer
+  imu_gyroscope_filt_ = imu_gyroscope_filter_.process(imu_gyroscope_);
+  imu_accelerometer_filt_ = imu_accelerometer_filter_.process(imu_accelerometer_);
 
   // Update state estimator
   updateStateEstimator(period_);
@@ -652,9 +683,14 @@ void ControllerCore::update(const double& dt)
   robot_model_->clampJointEfforts(des_joint_efforts_);
 }
 
-const string &ControllerCore::getRobotName()
+const std::string &ControllerCore::getRobotName()
 {
   return robot_name_;
+}
+
+const std::vector<std::string>& ControllerCore::getJointNames()
+{
+  return joint_names_;
 }
 
 void ControllerCore::setBaseLinearVelocityCmdX(const double &v)
@@ -779,6 +815,11 @@ std::vector<bool>& ControllerCore::getDesiredContactStates()
   //for(unsigned int i=foot_names.size(); i<ee_names.size()+foot_names.size(); i++)
   //  des_contact_states_[i] = false;
   return des_contact_states_;
+}
+
+const Eigen::VectorXd &ControllerCore::getDesiredJointEfforts() const
+{
+  return des_joint_efforts_;
 }
 
 std::string ControllerCore::getModeAsString()

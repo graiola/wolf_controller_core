@@ -22,7 +22,6 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_core/wpg/com_planner.h>
 #include <wolf_controller_core/state_estimator.h>
 #include <wolf_controller_core/terrain_estimator.h>
-#include <wolf_controller_core/devices/interface.h>
 #include <wolf_estimation/robot_odom/robot_odom.h>
 #include <wolf_controller_utils/tools.h>
 #include <wolf_wbid/id_problem.h>
@@ -117,6 +116,34 @@ public:
                      const Eigen::VectorXd& effort);
 
   /**
+         * @brief set the joint position
+         * @param index
+         * @param value
+         */
+  void setJointPosition(const unsigned int& i, const double& value);
+
+  /**
+         * @brief set the joint velocity
+         * @param index
+         * @param value
+         */
+  void setJointVelocity(const unsigned int& i, const double& value);
+
+  /**
+         * @brief set the joint acceleration
+         * @param index
+         * @param value
+         */
+  void setJointAcceleration(const unsigned int& i, const double& value);
+
+  /**
+         * @brief set the joint effort
+         * @param index
+         * @param value
+         */
+  void setJointEffort(const unsigned int& i, const double& value);
+
+  /**
          * @brief set the imu reading
          * @param orientation
          * @param gyroscope
@@ -125,6 +152,25 @@ public:
   void setImu(const Eigen::Quaterniond& q,
               const Eigen::Vector3d& gyro,
               const Eigen::Vector3d& acc);
+
+  /**
+         * @brief set the imu orientation
+         * @param orientation
+         */
+  void setImuOrientation(const Eigen::Quaterniond& q);
+
+  /**
+         * @brief set the imu gyroscope
+         * @param gyroscope
+         */
+  void setImuGyroscope(const Eigen::Vector3d& gyro);
+
+  /**
+         * @brief set the imu gyroscope
+         * @param accelerometer
+         */
+  void setImuAccelerometer(const Eigen::Vector3d& acc);
+
 
   /**
          * @brief set an external estimated state for example a ground truth
@@ -141,14 +187,19 @@ public:
   void setExtEstimatedContactStates(const std::map<std::string,std::pair<bool,Eigen::Vector3d> >& states);
 
   /**
-         * @brief get the command joint efforts (torque)
+         * @brief set an external estimated contact state for example from a contact sensor
          */
-  Eigen::VectorXd getJointEffortCmd() const;
+  void setExtEstimatedContactState(const std::string& contact_name, const bool& state, const Eigen::Vector3d& force);
 
   /**
          * @brief get the robot name
          */
   const std::string& getRobotName();
+
+  /**
+         * @brief get the robot's joint names
+         */
+  const std::vector<std::string>& getJointNames();
 
   /**
          * @brief Set the base linear velocity command along X
@@ -387,6 +438,8 @@ private:
   int n_joints_;
   /** @brief Robot name */
   std::string robot_name_;
+  /** @brief Joint names */
+  std::vector<std::string> joint_names_;
   /** @brief Control period */
   double period_;
   /** @brief Joint positions */
