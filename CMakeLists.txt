@@ -32,10 +32,6 @@ endif()
 
 # Eigen
 find_package(Eigen3 REQUIRED)
-# ADVR Packages
-find_package(OpenSoT REQUIRED)
-find_package(XBotInterface REQUIRED)
-find_package(ModelInterfaceRBDL REQUIRED)
 # WoLF
 find_package(wolf_wbid REQUIRED)
 find_package(wolf_estimation REQUIRED)
@@ -53,9 +49,6 @@ endif()
 include_directories(
     include
     ${EIGEN3_INCLUDE_DIRS}
-    ${OpenSoT_INCLUDE_DIRS}
-    ${XBotInterface_INCLUDE_DIRS}
-    ${ModelInterfaceRBDL_INCLUDE_DIRS}
     ${wolf_wbid_INCLUDE_DIRS}
     ${wolf_estimation_INCLUDE_DIRS}
     ${wolf_controller_utils_INCLUDE_DIRS}
