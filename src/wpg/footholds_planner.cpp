@@ -174,7 +174,7 @@ void FootholdsPlanner::update(const double& period, const Eigen::Vector3d& base_
   if(push_recovery_active_ && push_recovery_->update(period))
   {
     push_detected_ = true;
-    ROS_DEBUG_NAMED(CLASS_NAME,"Push detected!");
+    //ROS_DEBUG_NAMED(CLASS_NAME,"Push detected!");
   }
   else
     push_detected_ = false;
@@ -223,8 +223,8 @@ void FootholdsPlanner::calculateFootSteps()
   for(unsigned int i=0; i<foot_names.size(); i++)
   {
 
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"*********");
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"CalculateFootSteps for foot "<<foot_names[i]);
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"*********");
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"CalculateFootSteps for foot "<<foot_names[i]);
 
     if(gait_generator_->isLiftOff(foot_names[i]))
     {
@@ -235,18 +235,18 @@ void FootholdsPlanner::calculateFootSteps()
       hf_delta_hip_.setZero(); // \f$\deltaL_{x,y,0}\f$
       hf_delta_hip_(0) = hf_base_linear_velocity_(0)*1.0/gait_generator_->getSwingFrequency(foot_names[i]);
       hf_delta_hip_(1) = hf_base_linear_velocity_(1)*1.0/gait_generator_->getSwingFrequency(foot_names[i]);
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_hip_ (Linear part): "<<hf_delta_hip_.transpose());
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_hip_ (Linear part): "<<hf_delta_hip_.transpose());
 
       // 2) Compute the displacement of the foot produced by the angular velocity command
       hf_delta_heading_.setZero(); // \f$\deltaL_{h,0}\f$
       hf_delta_heading_(2) = hf_base_angular_velocity_(2)*1.0/gait_generator_->getSwingFrequency(foot_names[i]);
       hf_delta_heading_ = hf_delta_heading_.cross(hf_X_initial_hips_[i]);
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_heading_ (Angular part): "<<hf_delta_heading_.transpose());
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_heading_ (Angular part): "<<hf_delta_heading_.transpose());
 
       // 3) Combine the two displacements
       hf_delta_hip_(0)+= hf_delta_heading_(0);
       hf_delta_hip_(1)+= hf_delta_heading_(1);
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_hip_ (Combined): "<<hf_delta_hip_.transpose());
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_hip_ (Combined): "<<hf_delta_hip_.transpose());
 
     }
     else if(gait_generator_->isSwinging(foot_names[i]))
@@ -256,7 +256,7 @@ void FootholdsPlanner::calculateFootSteps()
       robot_model_->getPose(foot_names[i],robot_model_->getBaseLinkName(),base_T_foot_);
       // current foot position in the horizontal frame
       hf_X_current_foothold_ = hf_R_base_ * base_T_foot_.translation();
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_X_current_foothold_: "<<hf_X_current_foothold_.transpose());
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_X_current_foothold_: "<<hf_X_current_foothold_.transpose());
 
       // 5) Sum everything to obtain the new foothold displacement w.r.t hf
       hf_delta_foot_.setZero();
@@ -264,12 +264,12 @@ void FootholdsPlanner::calculateFootSteps()
 
       //6) Sum the delta for the push recovery
       hf_delta_foot_.head(2) =  hf_delta_foot_.head(2) + capture_point_delta_[foot_names[i]];
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_foot_: "<<hf_delta_foot_.transpose());
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_foot_: "<<hf_delta_foot_.transpose());
 
       // 6) Sum everything to obtain the new foothold displacement w.r.t world
       //world_delta_foot_.setZero();
       //world_delta_foot_.head(2) =  world_R_hf_ * hf_delta_foot_;
-      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"world_delta_foot_: "<<world_delta_foot_.transpose());
+      ////ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"world_delta_foot_: "<<world_delta_foot_.transpose());
 
       // 7) Get the step length and heading
       step_length_ = std::sqrt(hf_delta_foot_(0)*hf_delta_foot_(0) + hf_delta_foot_(1)*hf_delta_foot_(1));
@@ -277,7 +277,7 @@ void FootholdsPlanner::calculateFootSteps()
       if(step_length_ > step_length_max_)
       {
         step_length_ = step_length_max_;
-        ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Step length is greater than: "<<step_length_max_);
+        //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Step length is greater than: "<<step_length_max_);
       }
 
       steps_length_[foot_names[i]]         = step_length_;
@@ -300,10 +300,10 @@ void FootholdsPlanner::calculateFootSteps()
     desired_foothold_[foot_names[i]].x()    = current_foothold_[foot_names[i]].x() + steps_length_[foot_names[i]] * std::cos(steps_heading_[foot_names[i]]);
     desired_foothold_[foot_names[i]].y()    = current_foothold_[foot_names[i]].y() + steps_length_[foot_names[i]] * std::sin(steps_heading_[foot_names[i]]);
 
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_length["<<foot_names[i]<<"]: "<<steps_length_[foot_names[i]]);
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_heading["<<foot_names[i]<<"]: "<<steps_heading_[foot_names[i]]);
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_height["<<foot_names[i]<<"]: "<<steps_height_[foot_names[i]]);
-    ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_heading_rate["<<foot_names[i]<<"]: "<<steps_heading_rate_[foot_names[i]]);
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_length["<<foot_names[i]<<"]: "<<steps_length_[foot_names[i]]);
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_heading["<<foot_names[i]<<"]: "<<steps_heading_[foot_names[i]]);
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_height["<<foot_names[i]<<"]: "<<steps_height_[foot_names[i]]);
+    //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"steps_heading_rate["<<foot_names[i]<<"]: "<<steps_heading_rate_[foot_names[i]]);
   }
 }
 
@@ -401,13 +401,13 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
   {
     base_position_reference_(2) = base_height_max_wrt_terrain;
     base_linear_velocity_reference_(2) = hf_base_linear_velocity_ref_(2) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base height limit reached: "<<base_height_max_);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base height limit reached: "<<base_height_max_);
   }
   else if (base_position_reference_(2) < base_height_min_wrt_terrain)
   {
     base_position_reference_(2) = base_height_min_wrt_terrain;
     base_linear_velocity_reference_(2) = hf_base_linear_velocity_ref_(2) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base height limit reached: "<<0.0);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base height limit reached: "<<0.0);
   }
 }
 
@@ -431,25 +431,25 @@ void FootholdsPlanner::calculateBaseOrientation(const double& period, const Eige
   {
     base_orientation_(0) = base_roll_max_;
     base_angular_velocity_reference_(0) = hf_base_angular_velocity_ref_(0) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base roll rotation max reached: "<<base_roll_max_);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base roll rotation max reached: "<<base_roll_max_);
   }
   else if (base_orientation_(0) < base_roll_min_)
   {
     base_orientation_(0) = base_roll_min_;
     base_angular_velocity_reference_(0) = hf_base_angular_velocity_ref_(0) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base roll rotation min reached: "<<base_roll_min_);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base roll rotation min reached: "<<base_roll_min_);
   }
   if(base_orientation_(1) > base_roll_max_)
   {
     base_orientation_(1) = base_pitch_max_;
     base_angular_velocity_reference_(1) = hf_base_angular_velocity_ref_(1) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base pitch rotation max reached: "<<base_pitch_max_);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base pitch rotation max reached: "<<base_pitch_max_);
   }
   else if (base_orientation_(1) < base_pitch_min_)
   {
     base_orientation_(1) = base_pitch_min_;
     base_angular_velocity_reference_(1) = hf_base_angular_velocity_ref_(1) = 0.0;
-    ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base pitch rotation min reached: "<<base_pitch_min_);
+    //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base pitch rotation min reached: "<<base_pitch_min_);
   }
 
   rpyToRot(base_orientation_,base_rotation_reference_);
@@ -660,7 +660,7 @@ void FootholdsPlanner::setStepHeight(const double& height)
   {
     double height_max = step_height_max_;
     step_height_ = height_max;
-    ROS_WARN_STREAM_NAMED(CLASS_NAME,"Step height is greater than: "<<height_max);
+    PRINT_WARN_NAMED(CLASS_NAME,"Step height is greater than: "<<height_max);
   }
   else if(height <= 0.0)
   {
@@ -1056,13 +1056,13 @@ void PushRecovery::setMaxDelta(const double& max)
 void PushRecovery::activateComputeDeltas()
 {
   compute_deltas_ = true;
-  ROS_INFO_NAMED(CLASS_NAME,"Push recovery activated!");
+  PRINT_INFO_NAMED(CLASS_NAME,"Push recovery activated!");
 }
 
 void PushRecovery::deactivateComputeDeltas()
 {
   compute_deltas_ = false;
-  ROS_INFO_NAMED(CLASS_NAME,"Push recovery de-activated!");
+  PRINT_INFO_NAMED(CLASS_NAME,"Push recovery de-activated!");
 }
 
 void PushRecovery::setScaleValue(double scale)

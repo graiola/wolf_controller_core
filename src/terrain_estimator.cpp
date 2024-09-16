@@ -62,7 +62,7 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
       }
       else
       {
-        ROS_WARN_STREAM_NAMED(CLASS_NAME,"Can not solve the problem!");
+        PRINT_WARN_NAMED(CLASS_NAME,"Can not solve the problem!");
         return false;
       }
 
@@ -93,7 +93,7 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
   }
   else
   {
-    ROS_WARN_STREAM_NAMED(CLASS_NAME,"Angles beyond limits!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Angles beyond limits!");
     return false;
   }
 

@@ -549,7 +549,7 @@ void GaitGenerator::update(const double& period)
       }
       it->second.trajectory->update(period,it->second.contact_force);
 
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Update trajectory for foot "<< it->first);
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Update trajectory for foot "<< it->first);
     }
     else
     {
@@ -559,7 +559,7 @@ void GaitGenerator::update(const double& period)
       }
       //it->second.trajectory->standBy();
 
-      ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Stop trajectory for foot "<< it->first);
+      //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"Stop trajectory for foot "<< it->first);
     }
   }
 
@@ -592,9 +592,9 @@ void GaitGenerator::startStepReflex(bool start)
     it->second.trajectory->startStepReflex(step_reflex_active_);
 
   if(step_reflex_active_)
-    ROS_INFO_NAMED(CLASS_NAME,"Step reflex activated!");
+    PRINT_INFO_NAMED(CLASS_NAME,"Step reflex activated!");
   else
-    ROS_INFO_NAMED(CLASS_NAME,"Step reflex de-activated!");
+    PRINT_INFO_NAMED(CLASS_NAME,"Step reflex de-activated!");
 }
 
 void GaitGenerator::toggleStepReflex()
@@ -604,9 +604,9 @@ void GaitGenerator::toggleStepReflex()
     it->second.trajectory->startStepReflex(step_reflex_active_);
 
   if(step_reflex_active_)
-    ROS_INFO_NAMED(CLASS_NAME,"Step reflex activated!");
+    PRINT_INFO_NAMED(CLASS_NAME,"Step reflex activated!");
   else
-    ROS_INFO_NAMED(CLASS_NAME,"Step reflex de-activated!");
+    PRINT_INFO_NAMED(CLASS_NAME,"Step reflex de-activated!");
 }
 
 bool GaitGenerator::isStepReflexActive()
