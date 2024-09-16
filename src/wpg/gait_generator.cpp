@@ -638,7 +638,7 @@ void GaitGenerator::changeGait()
 
 TrajectoryInterface* GaitGenerator::selectTrajectoryType(Gait::trajectory_t trajectory_type)
 {
-  //ROS_INFO_STREAM_NAMED(CLASS_NAME,"Selected " << trajectory_type << " trajectory");
+  //PRINT_INFO_NAMED(CLASS_NAME,"Selected " << trajectory_type << " trajectory");
   switch(trajectory_type)
   {
   case Gait::ELLIPSE:

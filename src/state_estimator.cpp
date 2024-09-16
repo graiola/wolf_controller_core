@@ -12,7 +12,12 @@
 #include <wolf_estimation/estimation/kf_estimation_pinocchio.h>
 #include <wolf_estimation/estimation/kf_estimation_rbdl.h>
 
+// RT LOGGER
+#ifdef RT_LOGGER
+#include <rt_logger/rt_logger.h>
 using namespace rt_logger;
+#endif
+
 using namespace wolf_controller_utils;
 using namespace wolf_estimation;
 using namespace wolf_wbid;
@@ -153,11 +158,12 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
     chain[0] = limb_names[i];
     force_torque_sensors_[contact_names[i]] = force_estimation_->add_link(contact_names[i],dofs,chain);
   }
-
+#ifdef RT_LOGGER
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_position)   ,floating_base_position_);
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_rpy     )   ,floating_base_rpy_);
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_velocity)   ,floating_base_velocity_);
   RtLogger::getLogger().addPublisher(TOPIC(base_height           )   ,floating_base_position_(2));
+#endif
 }
 
 void StateEstimator::setEstimationType(const std::string& position_t, const std::string& orientation_t)

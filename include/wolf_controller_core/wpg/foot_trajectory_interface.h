@@ -11,6 +11,7 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #define WPG_FOOT_TRAJECTORY_INTERFACE_H
 
 #include <atomic>
+#include <memory>
 #include <Eigen/Dense>
 #include <wolf_controller_core/common.h>
 #include <wolf_controller_utils/common.h>

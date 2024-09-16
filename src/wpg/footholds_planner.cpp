@@ -10,7 +10,12 @@
 #include <wolf_controller_utils/filters.h>
 #include <OpenSoT/utils/cartesian_utils.h>
 
+// RT LOGGER
+#ifdef RT_LOGGER
+#include <rt_logger/rt_logger.h>
 using namespace rt_logger;
+#endif
+
 using namespace wolf_controller_utils;
 using namespace wolf_wbid;
 
@@ -57,8 +62,9 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerato
   base_angular_velocity_cmd_yaw_   = 0.0; // [rad/s]
 
   reset();
-
+#ifdef RT_LOGGER
   RtLogger::getLogger().addPublisher(TOPIC(des_base_height),base_position_(2));
+#endif
 }
 
 void FootholdsPlanner::reset()
@@ -578,10 +584,10 @@ void FootholdsPlanner::setPushRecoverySensibility(const double& v)
   if(v>=0.0 && v<= 1.0)
   {
     push_recovery_->setScaleValue(1.0 - v);
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set push recovery sensibility to "<< v);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set push recovery sensibility to "<< v);
   }
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Push recovery sensibility has to be defined between 0 and 1!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Push recovery sensibility has to be defined between 0 and 1!");
 }
 
 void FootholdsPlanner::setBaseLinearVelocityCmd(const double& linear)
@@ -589,7 +595,7 @@ void FootholdsPlanner::setBaseLinearVelocityCmd(const double& linear)
   base_linear_velocity_cmd_x_ = linear;
   base_linear_velocity_cmd_y_ = linear;
   base_linear_velocity_cmd_z_ = linear;
-  ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set base linear velocity to "<< linear);
+  PRINT_INFO_NAMED(CLASS_NAME,"Set base linear velocity to "<< linear);
 }
 
 void FootholdsPlanner::setBaseAngularVelocityCmd(const double& angular)
@@ -597,7 +603,7 @@ void FootholdsPlanner::setBaseAngularVelocityCmd(const double& angular)
   base_angular_velocity_cmd_roll_  = angular;
   base_angular_velocity_cmd_pitch_ = angular;
   base_angular_velocity_cmd_yaw_   = angular;
-  ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set base angular velocity to "<< angular);
+  PRINT_INFO_NAMED(CLASS_NAME,"Set base angular velocity to "<< angular);
 }
 
 void FootholdsPlanner::setBaseLinearVelocityCmd(const double& x, const double& y, const double& z, bool verbose)
@@ -606,7 +612,7 @@ void FootholdsPlanner::setBaseLinearVelocityCmd(const double& x, const double& y
   base_linear_velocity_cmd_y_ = y;
   base_linear_velocity_cmd_z_ = z;
   if(verbose)
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set base linear velocity to "<<" "<<x<<" "<<y<<" "<<z);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set base linear velocity to "<<" "<<x<<" "<<y<<" "<<z);
 }
 
 void FootholdsPlanner::setBaseAngularVelocityCmd(const double& roll, const double& pitch, const double& yaw, bool verbose)
@@ -615,7 +621,7 @@ void FootholdsPlanner::setBaseAngularVelocityCmd(const double& roll, const doubl
   base_angular_velocity_cmd_pitch_ = pitch;
   base_angular_velocity_cmd_yaw_   = yaw;
   if(verbose)
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set base angular velocity to "<<" "<<roll<<" "<<pitch<<" "<<yaw);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set base angular velocity to "<<" "<<roll<<" "<<pitch<<" "<<yaw);
 }
 
 void FootholdsPlanner::setBaseLinearVelocityCmdX(const double &v)
@@ -659,12 +665,12 @@ void FootholdsPlanner::setStepHeight(const double& height)
   else if(height <= 0.0)
   {
     step_height_ = 0.0;
-    ROS_WARN_NAMED(CLASS_NAME,"Step height is less equal than: 0.0");
+    PRINT_WARN_NAMED(CLASS_NAME,"Step height is less equal than: 0.0");
   }
   else
   {
     step_height_ = height;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set step height to: "<<height);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set step height to: "<<height);
   }
 }
 
@@ -675,7 +681,7 @@ void FootholdsPlanner::setMaxStepHeight(const double& max)
     step_height_max_ = max;
   }
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Max step height is less equal than: 0.0");
+    PRINT_WARN_NAMED(CLASS_NAME,"Max step height is less equal than: 0.0");
 }
 
 void FootholdsPlanner::setMaxBaseHeight(const double& max)
@@ -685,7 +691,7 @@ void FootholdsPlanner::setMaxBaseHeight(const double& max)
     base_height_max_ = max;
   }
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Max base height is less equal than: 0.0");
+    PRINT_WARN_NAMED(CLASS_NAME,"Max base height is less equal than: 0.0");
 }
 
 void FootholdsPlanner::setMaxBaseRoll(const double &max)
@@ -716,7 +722,7 @@ void FootholdsPlanner::setMaxStepLength(const double& max)
     push_recovery_->setMaxDelta(max);
   }
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Max step length is less equal than: 0.0");
+    PRINT_WARN_NAMED(CLASS_NAME,"Max step length is less equal than: 0.0");
 }
 
 // Gets
@@ -1044,7 +1050,7 @@ void PushRecovery::setMaxDelta(const double& max)
   if(max > 0)
     max_delta_ = max;
   else
-    ROS_WARN_NAMED(CLASS_NAME,"max delta must be positive!");
+    PRINT_WARN_NAMED(CLASS_NAME,"max delta must be positive!");
 }
 
 void PushRecovery::activateComputeDeltas()

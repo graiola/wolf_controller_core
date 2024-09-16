@@ -13,7 +13,6 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <string>
 #include <vector>
 #include <assert.h>
-#include <rt_logger/rt_logger.h>
 
 namespace wolf_controller
 {

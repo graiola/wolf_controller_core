@@ -38,12 +38,21 @@ find_package(wolf_estimation REQUIRED)
 find_package(wolf_controller_utils REQUIRED)
 # RT gui
 find_package(rt_gui QUIET)
+# RT logger
+find_package(rt_logger QUIET)
 
 if(${rt_gui_FOUND})
     message(STATUS "Found rt_gui, creating interface for wolf_controller.")
     add_definitions(-DRT_GUI)
 else()
     message(STATUS "rt_gui not found.")
+endif()
+
+if(${rt_logger_FOUND})
+    message(STATUS "Found rt_logger, creating loggers for wolf_controller.")
+    add_definitions(-DRT_LOGGER)
+else()
+    message(STATUS "rt_logger not found.")
 endif()
 
 include_directories(
@@ -53,6 +62,7 @@ include_directories(
     ${wolf_estimation_INCLUDE_DIRS}
     ${wolf_controller_utils_INCLUDE_DIRS}
     ${rt_gui_INCLUDE_DIRS}
+    ${rt_logger_INCLUDE_DIRS}
 )
 
 add_library(wpg
@@ -62,7 +72,7 @@ add_library(wpg
     src/wpg/foot_trajectory_interface.cpp
     src/wpg/footholds_planner.cpp
     src/wpg/gait_generator.cpp)
-target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES})
+target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES} ${rt_logger_LIBRARIES})
 
 add_library(controller_core
     src/controller_core.cpp
@@ -71,7 +81,7 @@ add_library(controller_core
     src/impedance.cpp
     src/terrain_estimator.cpp
     src/force_estimator.cpp)
-target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES})
+target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES} ${rt_logger_LIBRARIES})
 
 
 install(

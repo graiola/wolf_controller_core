@@ -7,7 +7,6 @@
 
 #include <wolf_controller_core/wpg/com_planner.h>
 
-using namespace rt_logger;
 using namespace wolf_wbid;
 
 namespace wolf_controller {

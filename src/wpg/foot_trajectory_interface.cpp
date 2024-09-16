@@ -9,6 +9,12 @@
 #include <wolf_controller_core/wpg/foot_trajectory_interface.h>
 #include <wolf_controller_utils/geometry.h>
 
+// RT LOGGER
+#ifdef RT_LOGGER
+#include <rt_logger/rt_logger.h>
+using namespace rt_logger;
+#endif
+
 using namespace wolf_controller;
 using namespace wolf_controller_utils;
 
@@ -28,9 +34,9 @@ TrajectoryInterface::TrajectoryInterface()
   Sz_ = Ear_ = Eigen::Matrix3d::Zero();
 
   trajectory_finished_ = true;
-#ifdef DEBUG
-  rt_logger::RtLogger::getLogger().addPublisher(TOPIC(position_reference_)+_legs_prefix[trajectory_id],position_reference_);
-  rt_logger::RtLogger::getLogger().addPublisher(TOPIC(velocity_reference_)+_legs_prefix[trajectory_id],velocity_reference_);
+#ifdef RT_LOGGER
+  RtLogger::getLogger().addPublisher(TOPIC(position_reference_)+_legs_prefix[trajectory_id],position_reference_);
+  RtLogger::getLogger().addPublisher(TOPIC(velocity_reference_)+_legs_prefix[trajectory_id],velocity_reference_);
 #endif
 
   reflex_ = std::make_shared<TrajectoryReflex>(this);
@@ -137,7 +143,7 @@ void TrajectoryInterface::setSwingFrequency(const double& swing_frequency)
   if(swing_frequency >= 0.0 && swing_frequency <= 6.0)
     swing_frequency_ = swing_frequency;
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Swing frequency has to be between 0.0 and 6.0 [Hz]!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Swing frequency has to be between 0.0 and 6.0 [Hz]!");
 }
 
 double TrajectoryInterface::getSwingFrequency()
@@ -274,7 +280,7 @@ void TrajectoryReflex::update(const double& period)
   {
     init();
     init_done_ = true;
-    //ROS_INFO_STREAM_NAMED(CLASS_NAME,"Activate step reflex for foot: "<<_legs_prefix[trajectory_interface_ptr_->trajectory_id]);
+    //PRINT_INFO_NAMED(CLASS_NAME,"Activate step reflex for foot: "<<_legs_prefix[trajectory_interface_ptr_->trajectory_id]);
   }
 
   double t = trajectory_interface_ptr_->time_;
@@ -344,7 +350,7 @@ void TrajectoryReflex::setContactForceThreshold(const double &th)
   if(th>0.0)
     force_th_ = th;
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Contact force threshold must be positive!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Contact force threshold must be positive!");
 }
 
 void TrajectoryReflex::setMaxStepRetraction(const double &max)
@@ -352,5 +358,5 @@ void TrajectoryReflex::setMaxStepRetraction(const double &max)
   if(max>=0.0)
     computeRetractionForce(max);
   else
-    ROS_WARN_NAMED(CLASS_NAME,"Max step retraction must be positive!");
+    PRINT_WARN_NAMED(CLASS_NAME,"Max step retraction must be positive!");
 }

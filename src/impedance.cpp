@@ -173,84 +173,84 @@ void Impedance::setKpSwingLegHAA(const double &value)
 {
     assert(value>=0.0);
     kp_swing_haa_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp swing HAA: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp swing HAA: "<<value);
 }
 
 void Impedance::setKpSwingLegHFE(const double &value)
 {
     assert(value>=0.0);
     kp_swing_hfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp swing HFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp swing HFE: "<<value);
 }
 
 void Impedance::setKpSwingLegKFE(const double &value)
 {
     assert(value>=0.0);
     kp_swing_kfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp swing KFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp swing KFE: "<<value);
 }
 
 void Impedance::setKdSwingLegHAA(const double &value)
 {
     assert(value>=0.0);
     kd_swing_haa_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd swing HAA: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd swing HAA: "<<value);
 }
 
 void Impedance::setKdSwingLegHFE(const double &value)
 {
     assert(value>=0.0);
     kd_swing_hfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd swing HFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd swing HFE: "<<value);
 }
 
 void Impedance::setKdSwingLegKFE(const double &value)
 {
     assert(value>=0.0);
     kd_swing_kfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd swing KFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd swing KFE: "<<value);
 }
 
 void Impedance::setKpStanceLegHAA(const double &value)
 {
     assert(value>=0.0);
     kp_stance_haa_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp stance HAA: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp stance HAA: "<<value);
 }
 
 void Impedance::setKpStanceLegHFE(const double &value)
 {
     assert(value>=0.0);
     kp_stance_hfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp stance HFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp stance HFE: "<<value);
 }
 
 void Impedance::setKpStanceLegKFE(const double &value)
 {
     assert(value>=0.0);
     kp_stance_kfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kp stance KFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kp stance KFE: "<<value);
 }
 
 void Impedance::setKdStanceLegHAA(const double &value)
 {
     assert(value>=0.0);
     kd_stance_haa_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd stance HAA: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd stance HAA: "<<value);
 }
 
 void Impedance::setKdStanceLegHFE(const double &value)
 {
     assert(value>=0.0);
     kd_stance_hfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd stance HFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd stance HFE: "<<value);
 }
 
 void Impedance::setKdStanceLegKFE(const double &value)
 {
     assert(value>=0.0);
     kd_stance_kfe_=value;
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Set Kd stance KFE: "<<value);
+    PRINT_INFO_NAMED(CLASS_NAME,"Set Kd stance KFE: "<<value);
 }
 
 const Eigen::MatrixXd& Impedance::getKp() const

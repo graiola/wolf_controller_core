@@ -73,7 +73,7 @@ void StateMachine::setCurrentState(StateMachine::states_t new_state)
 {
   if(new_state != current_state_)
   {
-    ROS_INFO_STREAM_NAMED(CLASS_NAME,"Change state to "<<enumToString(new_state));
+    PRINT_INFO_NAMED(CLASS_NAME,"Change state to "<<enumToString(new_state));
     state_changed_ = true;
   }
   previous_state_.store(current_state_.load());

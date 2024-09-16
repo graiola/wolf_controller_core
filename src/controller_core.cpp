@@ -20,7 +20,6 @@ using namespace rt_gui;
 #endif
 
 using namespace XBot;
-using namespace rt_logger;
 using namespace wolf_controller_utils;
 using namespace wolf_wbid;
 
