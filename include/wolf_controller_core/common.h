@@ -37,7 +37,6 @@ extern std::string _tf_prefix;
 extern std::string _rt_gui_group;
 #define TOPIC( data ) (_robot_name+"/wolf_controller/"#data)
 //#define OPEN_LOOP_TRAJECTORY
-
 // NOTE: by default we use the same leg order as RBDL (alphabetic order)
 extern std::vector<std::string> _dof_names;
 extern std::vector<std::string> _cartesian_names;

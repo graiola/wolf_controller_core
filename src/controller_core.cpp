@@ -154,7 +154,11 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
 #ifdef RT_GUI
   // create interface
+  RtGuiClient::getIstance().init("/wolf_panel","/wolf_controller");
   RtGuiClient::getIstance().addLabel(std::string(wolf_controller::_rt_gui_group),std::string("Control mode"),&mode_string_);
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand up"),boost::bind(&wolf_controller::ControllerCore::standUp,this,true));
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand down"),boost::bind(&wolf_controller::ControllerCore::standUp,this,false));
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Emergency stop"),boost::bind(&wolf_controller::ControllerCore::emergencyStop,this));
 #endif
 
   return true;
@@ -680,6 +684,9 @@ void ControllerCore::update(const double& dt)
 
   // Saturate desired joint efforts
   robot_model_->clampJointEfforts(des_joint_efforts_);
+
+  // To visualize in RT_GUI
+  mode_string_ = getModeAsString();
 }
 
 const std::string &ControllerCore::getRobotName()
