@@ -65,7 +65,7 @@ include_directories(
     ${rt_logger_INCLUDE_DIRS}
 )
 
-add_library(wpg
+add_library(wpg SHARED
     src/wpg/com_planner.cpp
     src/wpg/foot_state_machine.cpp
     src/wpg/foot_trajectory_ellipse.cpp
@@ -74,7 +74,7 @@ add_library(wpg
     src/wpg/gait_generator.cpp)
 target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES} ${rt_logger_LIBRARIES})
 
-add_library(controller_core
+add_library(controller_core SHARED
     src/controller_core.cpp
     src/state_machine.cpp
     src/state_estimator.cpp

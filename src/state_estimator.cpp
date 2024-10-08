@@ -98,7 +98,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   odom_estimator_->setTwistInLocalFrame(true);
 
   //kf_estimation_ = std::make_shared<KalmanFilterEstimatorPinocchio>(robot_model_->getRobotName(),wolf_controller::_period);
-  kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getRobotName(),wolf_controller::_period);
+  kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),wolf_controller::_period);
 
   int n_dofs = robot_model_->getJointNum();
   joint_positions_.resize(static_cast<Eigen::Index>(n_dofs));

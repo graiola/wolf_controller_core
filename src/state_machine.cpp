@@ -195,6 +195,7 @@ void ControllerStandingUpState::onEntry(StateMachine *state_machine)
   ControllerCore* controller = state_machine->getController();
   desired_yaw_ = controller->robot_model_->getBaseRotationInWorldRPY().z();
   desired_height_ = 0.0;
+  controller->id_prob_->setControlMode(IDProblem::mode_t::WPG);
 }
 
 void ControllerStandingUpState::onExit(StateMachine *state_machine)
@@ -310,6 +311,7 @@ void ControllerStandingDownState::onEntry(StateMachine *state_machine)
   desired_height_ = 0.0;
   ControllerCore* controller = state_machine->getController();
   stand_down_starting_height_ = controller->getRobotModel()->getCurrentHeight();
+  controller->id_prob_->setControlMode(IDProblem::mode_t::WPG);
 }
 
 void ControllerStandingDownState::onExit(StateMachine *state_machine)

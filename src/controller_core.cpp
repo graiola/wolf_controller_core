@@ -135,6 +135,7 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   foot_holds_planner_ = std::make_shared<FootholdsPlanner>(state_machine_,gait_generator_,robot_model_);
 
   state_estimator_   = std::make_shared<StateEstimator>(state_machine_,robot_model_);
+
   terrain_estimator_ = std::make_shared<TerrainEstimator>(state_estimator_,robot_model_);
   terrain_estimator_->setMaxRoll(M_PI);
   terrain_estimator_->setMinRoll(-M_PI);
@@ -145,7 +146,10 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   impedance_->startInertiaCompensation(false);
 
   com_planner_ = std::make_shared<ComPlanner>(robot_model_,foot_holds_planner_,terrain_estimator_);
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Create ID Problem...");
   id_prob_ = std::make_unique<IDProblem>(robot_model_);
+  PRINT_INFO_NAMED(CLASS_NAME,"...done!");
 
   solver_failures_cnt_   = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
   contact_failures_cnt_  = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
@@ -160,6 +164,8 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand down"),boost::bind(&wolf_controller::ControllerCore::standUp,this,false));
   RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Emergency stop"),boost::bind(&wolf_controller::ControllerCore::emergencyStop,this));
 #endif
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Initialization done!");
 
   return true;
 }
@@ -524,6 +530,8 @@ void ControllerCore::reset()
   des_joint_efforts_impedance_.fill(0.0);
   // Fill initial joint positions
   joint_positions_init_ = joint_positions_;
+
+  current_mode_ = requested_mode_ = previous_mode_ = WPG;
 }
 
 void ControllerCore::updateWpg(const double &dt)
