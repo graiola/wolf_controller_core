@@ -23,7 +23,7 @@ find_package(catkin QUIET)
 find_package(ament_cmake QUIET)
 
 if(${catkin_FOUND})
-    catkin_package(INCLUDE_DIRS include LIBRARIES wpg controller_core)
+    catkin_package(INCLUDE_DIRS include LIBRARIES wpg controller_core CATKIN_DEPENDS wolf_wbid)
 elseif(${ament_cmake_FOUND})
     ament_export_include_directories(include)
     ament_export_libraries(wpg controller_core)
