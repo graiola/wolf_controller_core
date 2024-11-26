@@ -53,6 +53,8 @@ public:
 
     //~StateEstimator()
 
+    void reset();
+
     void update(const double& period);
 
     void setEstimationType(const std::string& position_t, const std::string& orientation_t);

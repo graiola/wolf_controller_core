@@ -154,6 +154,7 @@ void ControllerInitState::onExit(StateMachine *state_machine)
 {
   ControllerCore* controller = state_machine->getController();
   controller->id_prob_->reset();
+  controller->state_estimator_->reset();
   ramp_->reset();
 }
 

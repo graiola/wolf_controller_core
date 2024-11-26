@@ -166,6 +166,27 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
 #endif
 }
 
+void StateEstimator::reset()
+{
+  floating_base_rpy_ = Eigen::Vector3d::Zero();
+  floating_base_position_ = Eigen::Vector3d::Zero();
+  floating_base_velocity_ = Eigen::Vector6d::Zero();
+  floating_base_pose_ = Eigen::Affine3d::Identity();
+  gt_position_ = Eigen::Vector3d::Zero();
+  gt_orientation_ = Eigen::Quaterniond::Identity();
+  gt_linear_velocity_ = Eigen::Vector3d::Zero();
+  gt_angular_velocity_= Eigen::Vector3d::Zero();
+  gt_linear_acceleration_ = Eigen::Vector3d::Zero();
+  imu_orientation_.normalize();
+  imu_gyroscope_.setZero();
+  imu_accelerometer_.setZero();
+  floating_base_velocity_qp_.setZero();
+  estimated_z_ = 0.0;
+
+  odom_estimator_->reset();
+  kf_estimation_->reset();
+}
+
 void StateEstimator::setEstimationType(const std::string& position_t, const std::string& orientation_t)
 {
   setPositionEstimationType(position_t);
