@@ -609,14 +609,17 @@ void StateEstimator::updateFloatingBase(const double& period)
     // The base does not rotate
     floating_base_pose_.linear() = Eigen::Matrix3d::Identity();
     floating_base_velocity_.segment(3,3) << 0.0, 0.0, 0.0;
+    rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
     break;
   case estimation_t::ODOMETRY:
     floating_base_pose_.linear() = odom_estimator_->getBasePose().linear();
     floating_base_velocity_.segment(3,3) << odom_estimator_->getBaseTwist().segment(3,3);
+    rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
     break;
   case estimation_t::KALMAN_FILTER:
     floating_base_pose_.linear() = kf_estimation_->getOrientation().toRotationMatrix();
     floating_base_velocity_.segment(3,3) << kf_estimation_->getAngularVelocity();
+    rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
     break;
   case estimation_t::IMU_MAGNETOMETER: // Use directly the orientation information from the IMU
     //use this with the real robot only if the magnetometer is not drifting
