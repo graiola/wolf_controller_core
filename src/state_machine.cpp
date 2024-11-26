@@ -130,7 +130,7 @@ void ControllerIdleState::onExit(StateMachine* state_machine) {
 /////////////////////////////////// INIT ///////////////////////////////////////////
 ControllerInitState::ControllerInitState()
 {
-  ramp_ = std::make_shared<Ramp>(3.0,Ramp::UP);
+  ramp_ = std::make_shared<Ramp>(10.0,Ramp::UP);
 }
 
 void ControllerInitState::updateStateMachine(StateMachine* state_machine, const double& dt) {
