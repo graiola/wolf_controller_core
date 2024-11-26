@@ -15,7 +15,7 @@
     <depend>wolf_wbid</depend>
     <depend>wolf_estimation</depend>
     <depend>wolf_controller_utils</depend>
-    <depend condition="$rt_gui_FOUND == True">rt_gui</depend>
+    <depend condition="$rt_gui_ros_FOUND == True">rt_gui_ros</depend>
     <depend condition="$rt_logger_FOUND == True">rt_logger</depend>
 
     <export>
