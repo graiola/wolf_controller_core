@@ -21,6 +21,8 @@ using namespace wolf_wbid;
 
 namespace wolf_controller {
 
+#define GAIN 0.05
+
 FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerator::Ptr gait_generator, QuadrupedRobot::Ptr robot_model, double step_length_max, double step_height_max)
 {
 
@@ -381,7 +383,7 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
   hf_base_linear_velocity_ref_(2) = base_linear_velocity_cmd_z_ * base_linear_velocity_scale_z_;
 
   for(unsigned int i=0;i<3;i++)
-    hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),0.5); //FIXME hardcoded gain, it should be based on the sampling time
+    hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),GAIN); //FIXME hardcoded gain, it should be based on the sampling time
 
   base_linear_velocity_reference_ = world_R_hf_ * hf_base_linear_velocity_;
 
@@ -420,7 +422,7 @@ void FootholdsPlanner::calculateBaseOrientation(const double& period, const Eige
   hf_base_angular_velocity_ref_(2) = base_angular_velocity_cmd_yaw_ * base_angular_velocity_scale_yaw_;
 
   for(unsigned int i=0;i<3;i++)
-    hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),0.5);
+    hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),GAIN);
 
   base_angular_velocity_reference_ = hf_base_angular_velocity_;
 
