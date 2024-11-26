@@ -23,7 +23,7 @@ find_package(catkin QUIET)
 find_package(ament_cmake QUIET)
 
 if(${catkin_FOUND})
-    catkin_package(INCLUDE_DIRS include LIBRARIES wpg controller_core CATKIN_DEPENDS wolf_wbid)
+    catkin_package(INCLUDE_DIRS include LIBRARIES wpg controller_core CATKIN_DEPENDS wolf_wbid wolf_estimation)
 elseif(${ament_cmake_FOUND})
     ament_export_include_directories(include)
     ament_export_libraries(wpg controller_core)
@@ -37,11 +37,11 @@ find_package(wolf_wbid REQUIRED)
 find_package(wolf_estimation REQUIRED)
 find_package(wolf_controller_utils REQUIRED)
 # RT gui
-find_package(rt_gui QUIET)
+find_package(rt_gui_ros QUIET)
 # RT logger
 find_package(rt_logger QUIET)
 
-if(${rt_gui_FOUND})
+if(${rt_gui_ros_FOUND})
     message(STATUS "Found rt_gui, creating interface for wolf_controller.")
     add_definitions(-DRT_GUI)
 else()
@@ -61,7 +61,7 @@ include_directories(
     ${wolf_wbid_INCLUDE_DIRS}
     ${wolf_estimation_INCLUDE_DIRS}
     ${wolf_controller_utils_INCLUDE_DIRS}
-    ${rt_gui_INCLUDE_DIRS}
+    ${rt_gui_ros_INCLUDE_DIRS}
     ${rt_logger_INCLUDE_DIRS}
 )
 
@@ -72,7 +72,7 @@ add_library(wpg SHARED
     src/wpg/foot_trajectory_interface.cpp
     src/wpg/footholds_planner.cpp
     src/wpg/gait_generator.cpp)
-target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES} ${rt_logger_LIBRARIES})
+target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_ros_LIBRARIES} ${rt_logger_LIBRARIES})
 
 add_library(controller_core SHARED
     src/controller_core.cpp
@@ -81,7 +81,7 @@ add_library(controller_core SHARED
     src/impedance.cpp
     src/terrain_estimator.cpp
     src/force_estimator.cpp)
-target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_LIBRARIES} ${rt_logger_LIBRARIES})
+target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_ros_LIBRARIES} ${rt_logger_LIBRARIES})
 
 
 install(

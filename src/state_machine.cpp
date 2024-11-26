@@ -11,7 +11,7 @@
 
 // RT GUI
 #ifdef RT_GUI
-#include <rt_gui/rt_gui_client.h>
+#include <rt_gui_ros/rt_gui_client.h>
 using namespace rt_gui;
 #endif
 
