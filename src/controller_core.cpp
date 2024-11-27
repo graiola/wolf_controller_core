@@ -158,7 +158,7 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
 #ifdef RT_GUI
   // create interface
-  RtGuiClient::getIstance().init("wolf_panel","wolf_controller_gui");
+  RtGuiClient::getIstance().init("wolf_rviz","wolf_controller_gui");
   RtGuiClient::getIstance().addLabel(std::string(wolf_controller::_rt_gui_group),std::string("Control mode"),&mode_string_);
   RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand up"),boost::bind(&wolf_controller::ControllerCore::standUp,this,true));
   RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand down"),boost::bind(&wolf_controller::ControllerCore::standUp,this,false));
