@@ -10,11 +10,11 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #ifndef WPG_GAIT_GENERATOR_H
 #define WPG_GAIT_GENERATOR_H
 
-#include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include <atomic>
+#include <map>
 #include <wolf_controller_core/common.h>
 #include <wolf_controller_core/wpg/foot_state_machine.h>
 #include <wolf_controller_core/wpg/foot_trajectory_interface.h>

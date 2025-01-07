@@ -10,7 +10,6 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #ifndef TERRAIN_ESTIMATOR_H
 #define TERRAIN_ESTIMATOR_H
 
-#include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <atomic>
