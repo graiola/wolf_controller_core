@@ -160,9 +160,9 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   // create interface
   RtGuiClient::getIstance().init("wolf_rviz","wolf_controller_gui");
   RtGuiClient::getIstance().addLabel(std::string(wolf_controller::_rt_gui_group),std::string("Control mode"),&mode_string_);
-  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand up"),boost::bind(&wolf_controller::ControllerCore::standUp,this,true));
-  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand down"),boost::bind(&wolf_controller::ControllerCore::standUp,this,false));
-  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Emergency stop"),boost::bind(&wolf_controller::ControllerCore::emergencyStop,this));
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand up"),std::bind(&wolf_controller::ControllerCore::standUp,this,true));
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Stand down"),std::bind(&wolf_controller::ControllerCore::standUp,this,false));
+  RtGuiClient::getIstance().addTrigger(std::string(wolf_controller::_rt_gui_group),std::string("Emergency stop"),std::bind(&wolf_controller::ControllerCore::emergencyStop,this));
 #endif
 
   PRINT_INFO_NAMED(CLASS_NAME,"Initialization done!");
