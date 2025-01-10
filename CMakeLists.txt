@@ -57,6 +57,7 @@ endif()
 
 include_directories(
     include
+    /opt/ros/$ENV{ROS_DISTRO}/include/kdl_parser/  # FIX FOR ROS HUMBLE
     ${EIGEN3_INCLUDE_DIRS}
     ${wolf_wbid_INCLUDE_DIRS}
     ${wolf_estimation_INCLUDE_DIRS}
