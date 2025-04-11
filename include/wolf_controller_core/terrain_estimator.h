@@ -83,6 +83,8 @@ private:
     Eigen::Matrix3d world_R_terrain_;
     Eigen::Affine3d world_T_terrain_;
 
+    bool use_plane_projection_;
+
     StateEstimator::Ptr state_estimator_;
     wolf_wbid::QuadrupedRobot::Ptr robot_model_;
 
@@ -111,10 +113,6 @@ private:
     double posture_adjustment_prev_;
     Eigen::Vector3d posture_adjustment_dot_world_;
     Eigen::Vector3d posture_adjustment_dot_base_;
-
-    /** @brief Trigger the update of the terrain estimator */
-    std::map<std::string,wolf_controller_utils::Trigger> touchdown_;
-    bool update_;
 
     Eigen::Matrix3d tmp_matrix3d_;
     Eigen::Vector3d tmp_vector3d_;
