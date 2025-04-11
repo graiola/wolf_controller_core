@@ -70,11 +70,17 @@ public:
 
 private:
 
-    void update();
+    static constexpr int N_LEGS_MAX = 4;
 
-    Eigen::MatrixXd A_;
-    Eigen::MatrixXd Ai_;
-    Eigen::VectorXd b_;
+    // Fixed-size members
+    Eigen::Matrix<double, N_LEGS_MAX, 3> A_fixed_;
+    Eigen::Matrix<double, 3, N_LEGS_MAX> Ai_fixed_;
+    Eigen::Matrix<double, N_LEGS_MAX, 1> b_fixed_;
+    Eigen::Matrix<double, 3, N_LEGS_MAX> contact_positions_;
+
+    Eigen::Matrix3d tmp_matrix3d_;
+    Eigen::Vector3d tmp_vector3d_;
+
     Eigen::Vector3d terrain_normal_;
     Eigen::Vector3d hf_X_terrain_;
     Eigen::Matrix3d hf_R_terrain_;
@@ -113,16 +119,9 @@ private:
     double posture_adjustment_prev_;
     Eigen::Vector3d posture_adjustment_dot_world_;
     Eigen::Vector3d posture_adjustment_dot_base_;
-
-    Eigen::Matrix3d tmp_matrix3d_;
-    Eigen::Vector3d tmp_vector3d_;
-
-
+    Eigen::Vector3d plane_coeffs_;
 };
 
+} // namespace wolf_controller
 
-} // namespace
-
-
-#endif
-
+#endif // TERRAIN_ESTIMATOR_H

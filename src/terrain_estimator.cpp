@@ -2,7 +2,7 @@
  * @file terrain_estimator.cpp
  * @author Gennaro Raiola, Michele Focchi
  * @date 12 June, 2019
- * @brief Terrain estimator based on foot position fitting
+ * @brief Terrain estimator based on foot position fitting (real-time safe)
  */
 
  #include <wolf_controller_core/terrain_estimator.h>
@@ -15,9 +15,12 @@
  
  namespace wolf_controller {
  
+ // Constants
+ constexpr int N_LEGS_MAX = 4;
+ 
  TerrainEstimator::TerrainEstimator(StateEstimator::Ptr state_estimator,
                                     QuadrupedRobot::Ptr robot_model)
-   :use_plane_projection_(true)
+   : use_plane_projection_(true)
  {
    assert(state_estimator);
    state_estimator_ = state_estimator;
@@ -25,9 +28,12 @@
    assert(robot_model);
    robot_model_ = robot_model;
  
-   A_.resize(N_LEGS,3);
-   Ai_.resize(3,N_LEGS);
-   b_.resize(N_LEGS);
+   // Fixed-size initialization
+   A_fixed_.setZero();
+   b_fixed_.setZero();
+   Ai_fixed_.setZero();
+   tmp_matrix3d_.setZero();
+   contact_positions_.setZero();
  
    reset();
  }
@@ -38,20 +44,46 @@
  
    auto foot_names = robot_model_->getFootNames();
    int contacts = 0;
-   for(unsigned int i = 0; i < foot_names.size(); i++)
-     contacts += state_estimator_->getContact(foot_names[i]) ? 1 : 0;
+   int contact_idx = 0;
  
-   if(contacts >= 3)
+   for (unsigned int i = 0; i < foot_names.size(); ++i)
    {
-     // 2 - Update A and b with only contacting feet
-     update();
- 
-     tmp_matrix3d_.noalias() = A_.transpose() * A_;
- 
-     if(tmp_matrix3d_.determinant() != 0.0)
+     if (state_estimator_->getContact(foot_names[i]))
      {
-       Ai_.noalias() = tmp_matrix3d_.inverse() * A_.transpose();
-       terrain_normal_ = Ai_ * b_;
+       contact_positions_.col(contact_idx) = robot_model_->getFeetPositionInWorld().at(foot_names[i]);
+       contact_idx++;
+     }
+   }
+ 
+   contacts = contact_idx;
+ 
+   if (contacts >= 3)
+   {
+     // 2 - Fill A_fixed_ and b_fixed_ using rows
+     double avg_x = 0.0, avg_y = 0.0, avg_z = 0.0;
+ 
+     for (int i = 0; i < contacts; ++i)
+     {
+       const auto& pos = contact_positions_.col(i);
+       A_fixed_.row(i) << pos(0), pos(1), 1.0;
+       b_fixed_(i) = -pos(2);
+ 
+       avg_x += pos(0);
+       avg_y += pos(1);
+       avg_z += pos(2);
+     }
+ 
+     avg_x /= contacts;
+     avg_y /= contacts;
+     avg_z /= contacts;
+ 
+     // Compute pseudo-inverse without allocation
+     tmp_matrix3d_.noalias() = A_fixed_.topRows(contacts).transpose() * A_fixed_.topRows(contacts);
+ 
+     if (tmp_matrix3d_.determinant() != 0.0)
+     {
+       Ai_fixed_.noalias() = tmp_matrix3d_.inverse() * A_fixed_.topRows(contacts).transpose();
+       terrain_normal_ = Ai_fixed_.leftCols(contacts) * b_fixed_.head(contacts);
      }
      else
      {
@@ -59,24 +91,35 @@
        return false;
      }
  
-     // 3 - Normalize the terrain normal
+     // Normalize terrain normal
      terrain_normal_(2) = 1.0;
      terrain_normal_ = terrain_normal_ / terrain_normal_.norm();
  
-     // 4 - Extract the estimated values for roll and pitch
+     // Extract roll and pitch
      estimated_pitch_  = std::atan(terrain_normal_(0) / terrain_normal_(2));
      estimated_roll_   = std::atan(-terrain_normal_(1) * std::sin(estimated_pitch_) / terrain_normal_(0));
+ 
+     // Optional: plane projection
+     if (use_plane_projection_)
+     {
+       plane_coeffs_ = A_fixed_.topRows(contacts).colPivHouseholderQr().solve(b_fixed_.head(contacts));
+       double z_on_plane = -(plane_coeffs_(0) * avg_x + plane_coeffs_(1) * avg_y + plane_coeffs_(2));
+       world_X_terrain_ << avg_x, avg_y, z_on_plane;
+     }
+     else
+     {
+       world_X_terrain_ << avg_x, avg_y, avg_z;
+     }
    }
  
    // 5 - Filter
    roll_  = secondOrderFilter(roll_, roll_filt_, estimated_roll_, 1.0);
    pitch_ = secondOrderFilter(pitch_, pitch_filt_, estimated_pitch_, 1.0);
  
-   // 6 - Check output limits
-   if((roll_ > min_roll_) && (roll_ < max_roll_) &&
-      (pitch_ > min_pitch_) && (pitch_ < max_pitch_))
+   // 6 - Check limits
+   if ((roll_ > min_roll_) && (roll_ < max_roll_) &&
+       (pitch_ > min_pitch_) && (pitch_ < max_pitch_))
    {
-     // 7 - Update the roll and pitch output values
      roll_out_world_  = roll_;
      pitch_out_world_ = pitch_;
    }
@@ -86,7 +129,7 @@
      return false;
    }
  
-   // 7 - Update the resulting Transformation
+   // 7 - Compute transforms
    tmp_vector3d_ << roll_out_world_, pitch_out_world_, 0.0;
    rpyToRotTranspose(tmp_vector3d_, world_R_terrain_);
    world_T_terrain_.translation() = world_X_terrain_;
@@ -99,7 +142,7 @@
    roll_out_hf_ = tmp_vector3d_(0);
    pitch_out_hf_ = tmp_vector3d_(1);
  
-   // 8 - Update the state estimator
+   // 8 - Set terrain normal
    state_estimator_->setTerrainNormal(terrain_normal_);
  
    // 9 - Posture adjustment
@@ -113,62 +156,8 @@
    return true;
  }
  
- void TerrainEstimator::update()
- {
-   auto foot_names = robot_model_->getFootNames();
-   auto foot_positions = robot_model_->getFeetPositionInWorld();
- 
-   std::vector<Eigen::Vector3d> contact_positions;
-   for (const auto& name : foot_names)
-   {
-     if (state_estimator_->getContact(name))
-       contact_positions.push_back(foot_positions[name]);
-   }
- 
-   int n_contacts = contact_positions.size();
-   if (n_contacts < 3)
-   {
-     PRINT_WARN_NAMED(CLASS_NAME, "Not enough contacts to compute terrain.");
-     return;
-   }
- 
-   A_.resize(n_contacts, 3);
-   b_.resize(n_contacts);
- 
-   double avg_x = 0.0, avg_y = 0.0, avg_z = 0.0;
- 
-   for (int i = 0; i < n_contacts; ++i)
-   {
-     const auto& pos = contact_positions[i];
-     A_(i, 0) = pos(0);
-     A_(i, 1) = pos(1);
-     A_(i, 2) = 1.0;
-     b_(i)    = -pos(2);
- 
-     avg_x += pos(0);
-     avg_y += pos(1);
-     avg_z += pos(2);
-   }
- 
-   avg_x /= n_contacts;
-   avg_y /= n_contacts;
-   avg_z /= n_contacts;
- 
-   if (use_plane_projection_)
-   {
-     Eigen::Vector3d plane_coeffs = A_.colPivHouseholderQr().solve(b_);
-     double z_on_plane = -(plane_coeffs(0) * avg_x + plane_coeffs(1) * avg_y + plane_coeffs(2));
-     world_X_terrain_ << avg_x, avg_y, z_on_plane;
-   }
-   else
-   {
-     world_X_terrain_ << avg_x, avg_y, avg_z;
-   }
- }
- 
  void TerrainEstimator::reset()
  {
- 
    roll_ = roll_filt_ = roll_out_world_ = roll_out_hf_ = estimated_roll_ = 0.0;
    pitch_ = pitch_filt_ = pitch_out_world_ = pitch_out_hf_ = estimated_pitch_ = 0.0;
  
