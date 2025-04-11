@@ -833,6 +833,16 @@ Gait::gait_t FootholdsPlanner::getGaitType() const
   return gait_generator_->getGaitType();
 }
 
+bool FootholdsPlanner::isFootInStance(const std::string& name)
+{
+  return gait_generator_->isInStance(name);
+}
+
+bool FootholdsPlanner::isFootInSwing(const std::string& name)
+{
+  return gait_generator_->isSwinging(name);
+}
+
 bool FootholdsPlanner::isAnyFootInTouchDown()
 {
   return gait_generator_->isAnyFootInTouchDown();

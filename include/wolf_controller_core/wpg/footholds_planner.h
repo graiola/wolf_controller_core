@@ -324,6 +324,16 @@ public:
      */
     bool isGaitCycleEnded();
 
+        /**
+     * @brief true if foot name is in swing
+     */
+    bool isFootInSwing(const std::string& name);
+
+        /**
+     * @brief true if foot name is in stance
+     */
+    bool isFootInStance(const std::string& name);
+
     /**
          * @brief Get Push Recovery
          */
