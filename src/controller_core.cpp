@@ -505,7 +505,7 @@ void ControllerCore::reset()
   state_estimator_->resetGyroscopeIntegration();
   state_estimator_->startContactComputation();
   // Terrain Estimator
-  //terrain_estimator_->reset();
+  terrain_estimator_->reset();
   // Footholds planner with gait generator
   foot_holds_planner_->reset();
   foot_holds_planner_->setBasePosition(state_estimator_->getFloatingBasePosition());
