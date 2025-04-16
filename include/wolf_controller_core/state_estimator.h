@@ -47,7 +47,7 @@ public:
      */
     typedef std::shared_ptr<const StateEstimator> ConstPtr;
 
-    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER,ODOMETRY};
+    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER,ODOMETRY,ESTIMATED_Z};
 
     StateEstimator(StateMachine::Ptr state_machine, wolf_wbid::QuadrupedRobot::Ptr robot_model);
 

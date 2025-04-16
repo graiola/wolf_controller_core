@@ -53,6 +53,10 @@ std::string enumToString(const StateEstimator::estimation_t& estimation)
   case StateEstimator::estimation_t::KALMAN_FILTER:
     ret = "kalman_filter";
     break;
+
+  case StateEstimator::estimation_t::ESTIMATED_Z:
+    ret = "estimated_z";
+    break;
   };
 
   return ret;
@@ -74,6 +78,8 @@ StateEstimator::estimation_t stringToEnum(const std::string& estimation)
     ret = StateEstimator::estimation_t::KALMAN_FILTER;
   else if(estimation == "odometry")
     ret = StateEstimator::estimation_t::ODOMETRY;
+  else if(estimation == "estimated_z")
+    ret = StateEstimator::estimation_t::ESTIMATED_Z;
   else
     throw std::runtime_error("Wrong estimation type!");
 
@@ -684,8 +690,6 @@ void StateEstimator::updateFloatingBase(const double& period)
   robot_model_->setFloatingBaseAngularVelocity(floating_base_velocity_.segment(3,3));
   robot_model_->update();
 
-  estimated_z_ = -estimateZ();
-
   switch(estimation_position)
   {
   case estimation_t::NONE:
@@ -705,12 +709,18 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_velocity_.segment(0,3) << gt_linear_velocity_;
     floating_base_position_ = gt_position_;
     break;
+  case estimation_t::ESTIMATED_Z:
+    floating_base_velocity_.segment(0,3) << 0.0,0.0,0.0;
+    floating_base_position_ << 0.0,0.0,-estimateZ();
+    break;
   default:
     // The base does not move
     floating_base_velocity_.segment(0,3) << 0.0,0.0,0.0;
     floating_base_position_ << 0.0,0.0,0.0;
     break;
   };
+
+  estimated_z_ = floating_base_position_(2);
 
   // Finally update the floating base with the full pose and velocities
   floating_base_pose_.translation() = floating_base_position_;
