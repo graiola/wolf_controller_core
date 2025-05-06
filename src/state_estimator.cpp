@@ -594,7 +594,7 @@ void StateEstimator::updateFloatingBase(const double& period)
       kf_estimation_->init(joint_positions_,joint_velocities_,floating_base_pose_);
     }
     kf_estimation_->updateJoints(joint_positions_,joint_velocities_);
-    kf_estimation_->updateImu(imu_orientation_,imu_gyroscope_,imu_accelerometer_);
+    kf_estimation_->updateImu(imu_orientation_,imu_gyroscope_,imu_accelerometer_,false);
 
     for(unsigned int i = 0; i<robot_model_->getFootNames().size(); i++)
     {
