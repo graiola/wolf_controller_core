@@ -51,8 +51,6 @@ public:
 
   void resetPosition();
 
-  void setFiltersCutoffFreq(const double& hz);
-
 private:
 
   void computeSupportPolygonCenter();
@@ -70,8 +68,6 @@ private:
 
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_position_ref_filter_;
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_velocity_ref_filter_;
-
-  double filters_cutoff_freq_;
 
   bool update_;
 
