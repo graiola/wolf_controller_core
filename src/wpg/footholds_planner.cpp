@@ -983,7 +983,10 @@ bool PushRecovery::update(const double& period)
   }
 
   // Compute the capture point
-  double tau =  std::sqrt(std::abs(com_pos_(2))/GRAVITY);
+  constexpr double min_com_height = 0.05; // meters
+  double com_z = std::max(com_pos_(2), min_com_height);
+  double tau = std::sqrt(com_z / GRAVITY);
+
   capture_point_ = tau * com_vel_.head(2) + com_pos_.head(2); // World
 
   // Reset COM integration if the gait cycle is ended
