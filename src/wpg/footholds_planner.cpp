@@ -853,6 +853,11 @@ PushRecovery* FootholdsPlanner::getPushRecovery() const
   return push_recovery_.get();
 }
 
+GaitGenerator* FootholdsPlanner::getGaitGenerator() const
+{
+  return gait_generator_.get();
+}
+
 bool FootholdsPlanner::areAllFeetInStance()
 {
   return gait_generator_->areAllFeetInStance();
