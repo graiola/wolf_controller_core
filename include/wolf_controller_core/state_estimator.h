@@ -131,7 +131,9 @@ public:
 
     const Eigen::Vector3d& getGroundTruthBaseAngularVelocity() const;
 
-    const double& getEstimatedBaseHeight() const;
+    const double& getBaseHeightInBasefoot() const;
+
+    const double& getBaseHeightInWorld() const;
 
     void startContactComputation();
 

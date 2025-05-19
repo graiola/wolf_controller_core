@@ -415,9 +415,14 @@ const Eigen::Vector3d& StateEstimator::getGroundTruthBaseAngularVelocity() const
   return gt_angular_velocity_;
 }
 
-const double& StateEstimator::getEstimatedBaseHeight() const
+const double& StateEstimator::getBaseHeightInBasefoot() const
 {
   return estimated_z_;
+}
+
+const double& StateEstimator::getBaseHeightInWorld() const
+{
+  return floating_base_position_(2);
 }
 
 void StateEstimator::startContactComputation()
@@ -690,6 +695,8 @@ void StateEstimator::updateFloatingBase(const double& period)
   robot_model_->setFloatingBaseAngularVelocity(floating_base_velocity_.segment(3,3));
   robot_model_->update();
 
+  estimated_z_ = -estimateZ();
+
   switch(estimation_position)
   {
   case estimation_t::NONE:
@@ -711,7 +718,7 @@ void StateEstimator::updateFloatingBase(const double& period)
     break;
   case estimation_t::ESTIMATED_Z:
     floating_base_velocity_.segment(0,3) << 0.0,0.0,0.0;
-    floating_base_position_ << 0.0,0.0,-estimateZ();
+    floating_base_position_ << 0.0,0.0,estimated_z_;
     break;
   default:
     // The base does not move
@@ -719,8 +726,6 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_position_ << 0.0,0.0,0.0;
     break;
   };
-
-  estimated_z_ = floating_base_position_(2);
 
   // Finally update the floating base with the full pose and velocities
   floating_base_pose_.translation() = floating_base_position_;
