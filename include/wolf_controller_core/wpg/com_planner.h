@@ -69,7 +69,10 @@ private:
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_position_ref_filter_;
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_velocity_ref_filter_;
 
-  bool update_;
+  Eigen::Vector2d dcm_target_;
+  Eigen::Vector2d dcm_nominal_;
+  Eigen::Vector3d com_position_;
+  Eigen::Vector3d com_velocity_;
 
 };
 

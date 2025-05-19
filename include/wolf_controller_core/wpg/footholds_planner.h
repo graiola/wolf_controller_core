@@ -329,6 +329,11 @@ public:
          */
     PushRecovery* getPushRecovery() const;
 
+    /**
+     * @brief Get Gait Generator
+     */
+    GaitGenerator* getGaitGenerator() const;
+
 private:
 
     void setInitialOffsets();
