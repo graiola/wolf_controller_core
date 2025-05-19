@@ -93,7 +93,7 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
   }
   else
   {
-    PRINT_WARN_NAMED(CLASS_NAME,"Angles beyond limits!");
+    PRINT_WARN_THROTTLE_NAMED(5.0,CLASS_NAME,"Angles beyond limits!");
     return false;
   }
 
