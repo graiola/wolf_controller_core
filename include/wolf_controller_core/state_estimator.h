@@ -248,6 +248,9 @@ private:
     /** @brief KF base estimation */
     wolf_estimation::KalmanFilterEstimatorInterface::Ptr kf_estimation_;
 
+    /** @brief QP base estimation */
+    OpenSoT::FloatingBaseEstimation::Ptr qp_estimation_;
+
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;
 

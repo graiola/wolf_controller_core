@@ -98,13 +98,21 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   const std::vector<std::string>& contact_names = robot_model_->getContactNames();
   const std::vector<std::string>& limb_names = robot_model_->getLimbNames();
 
+  // Odom estimator
   odom_estimator_ = std::make_shared<RobotOdomEstimator>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),
                                                          robot_model_->getFootNames(),robot_model_->getImuSensorName(),
                                                          robot_model_->getBaseLinkName(),true,false,true,"odometry");
   odom_estimator_->setTwistInLocalFrame(true);
 
+  // KF estimator
   //kf_estimation_ = std::make_shared<KalmanFilterEstimatorPinocchio>(robot_model_->getRobotName(),wolf_controller::_period);
   kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),wolf_controller::_period);
+
+  // QP Estimator
+  Eigen::Matrix6d contact_matrix;
+  contact_matrix.setZero();
+  contact_matrix.block(0,0,3,3) << Eigen::Matrix3d::Identity();
+  qp_estimation_ = std::make_shared<wolf_estimation::qp_estimation>(robot_model_,robot_model_->getFootNames(),contact_matrix);
 
   int n_dofs = robot_model_->getJointNum();
   joint_positions_.resize(static_cast<Eigen::Index>(n_dofs));
@@ -610,6 +618,15 @@ void StateEstimator::updateFloatingBase(const double& period)
     kf_estimation_->update();
   }
 
+  // Update the qp
+  if(estimation_position == ESTIMATED_Z)
+  {
+    for(unsigned int i = 0; i<robot_model_->getFootNames().size(); i++)
+      qp_estimation_->setContactState(robot_model_->getFootNames()[i],contact_states_[robot_model_->getFootNames()[i]]);
+
+    qp_estimation_->update();
+  }
+
   // Note: we assume that the IMU is orientated as the base/waist of the robot
   // if this is not the case, it is necessary to add a transfomation from the IMU frame to the
   // base/trunk frame
@@ -717,7 +734,8 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_position_ = gt_position_;
     break;
   case estimation_t::ESTIMATED_Z:
-    floating_base_velocity_.segment(0,3) << 0.0,0.0,0.0;
+    qp_estimation_->getFloatingBaseTwist(floating_base_velocity_qp_);
+    floating_base_velocity_.segment(0,3) = floating_base_velocity_qp_.segment(0,3);
     floating_base_position_ << 0.0,0.0,estimated_z_;
     break;
   default:
