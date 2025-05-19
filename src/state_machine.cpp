@@ -182,7 +182,7 @@ void ControllerStandingUpState::updateStateMachine(StateMachine* state_machine, 
   controller->updateBaseReferences(pos_, vel_, R_);
   if (!controller->updateSolver(controller->des_joint_positions_)) {
     state_machine->setCurrentState(StateMachine::ANOMALY);
-  } else if (controller->getStateEstimator()->getEstimatedBaseHeight() >= controller->robot_model_->getStandUpHeight()) {
+  } else if (controller->getStateEstimator()->getBaseHeightInBasefoot() >= controller->robot_model_->getStandUpHeight()) {
     state_machine->setCurrentState(StateMachine::ACTIVE);
   }
 }
