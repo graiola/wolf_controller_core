@@ -29,6 +29,16 @@ TerrainEstimator::TerrainEstimator(StateEstimator::Ptr state_estimator,
 
   rpy_filter_.setOmega(2.0 * M_PI * 3.0); // 3 Hz cutoff by default
 
+  terrain_rotation_.setIdentity();
+  x_axis_.setZero();
+  y_axis_.setZero();
+  z_axis_.setZero();
+  rpy_.setZero();
+  terrain_rpy_.setZero();
+  avg_.setZero();
+  terrain_params_.setZero();
+  filtered_rpy_.setZero();
+
   reset();
 }
 
@@ -40,28 +50,27 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
   updateFootMatrix();
 
   // Solve for terrain normal using QR decomposition
-  Eigen::Vector3d terrain_params = A_.colPivHouseholderQr().solve(b_);
-  terrain_normal_ << terrain_params(0), terrain_params(1), 1.0;
+  terrain_params_ = A_.colPivHouseholderQr().solve(b_);
+  terrain_normal_ << terrain_params_(0), terrain_params_(1), 1.0;
   terrain_normal_.normalize();
 
-  // Convert normal to roll/pitch
-  Eigen::Matrix3d terrain_rotation;
-  Eigen::Vector3d z_axis = terrain_normal_;
-  Eigen::Vector3d x_axis = (Eigen::Vector3d::UnitX() - z_axis * (z_axis.dot(Eigen::Vector3d::UnitX()))).normalized();
-  Eigen::Vector3d y_axis = z_axis.cross(x_axis);
-  terrain_rotation.col(0) = x_axis;
-  terrain_rotation.col(1) = y_axis;
-  terrain_rotation.col(2) = z_axis;
+  // Convert normal to roll/pitch (reusing pre-allocated variables)
+  z_axis_ = terrain_normal_;
+  x_axis_ = (Eigen::Vector3d::UnitX() - z_axis_ * (z_axis_.dot(Eigen::Vector3d::UnitX()))).normalized();
+  y_axis_ = z_axis_.cross(x_axis_);
 
-  Eigen::Vector3d rpy;
-  rotToRpy(terrain_rotation, rpy);
-  estimated_roll_ = rpy(0);
-  estimated_pitch_ = rpy(1);
+  terrain_rotation_.col(0) = x_axis_;
+  terrain_rotation_.col(1) = y_axis_;
+  terrain_rotation_.col(2) = z_axis_;
+
+  rotToRpy(terrain_rotation_, rpy_);
+  estimated_roll_ = rpy_(0);
+  estimated_pitch_ = rpy_(1);
 
   rpy_filter_.setTimeStep(dt);
-  Eigen::Vector3d filtered = rpy_filter_.process(Eigen::Vector3d(estimated_roll_, estimated_pitch_, 0.0));
-  roll_ = filtered.x();
-  pitch_ = filtered.y();
+  filtered_rpy_ = rpy_filter_.process({estimated_roll_, estimated_pitch_, 0.0});
+  roll_ = filtered_rpy_.x();
+  pitch_ = filtered_rpy_.y();
 
   if (std::abs(roll_) > max_roll_ || std::abs(pitch_) > max_pitch_)
     return false;
@@ -70,8 +79,8 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
   pitch_out_world_ = pitch_;
 
   // Update terrain pose
-  Eigen::Vector3d terrain_rpy(roll_, pitch_, 0.0);
-  rpyToRotTranspose(terrain_rpy, world_R_terrain_);
+  terrain_rpy_ << roll_, pitch_, 0.0;
+  rpyToRotTranspose(terrain_rpy_, world_R_terrain_);
   world_T_terrain_.translation() = world_X_terrain_;
   world_T_terrain_.linear() = world_R_terrain_;
 
@@ -79,9 +88,9 @@ bool TerrainEstimator::computeTerrainEstimation(const double& dt)
   hf_X_terrain_ = hf_T_terrain_.translation();
   hf_R_terrain_ = hf_T_terrain_.linear();
 
-  rotTransposeToRpy(hf_R_terrain_, terrain_rpy);
-  roll_out_hf_ = terrain_rpy(0);
-  pitch_out_hf_ = terrain_rpy(1);
+  rotTransposeToRpy(hf_R_terrain_, terrain_rpy_);
+  roll_out_hf_ = terrain_rpy_(0);
+  pitch_out_hf_ = terrain_rpy_(1);
 
   // Posture adjustment
   double terrain_h_base = state_estimator_->getFloatingBasePosition()(2);
@@ -101,17 +110,17 @@ void TerrainEstimator::updateFootMatrix()
   auto foot_names = robot_model_->getFootNames();
   auto foot_positions = robot_model_->getFeetPositionInWorld();
 
-  Eigen::Vector3d avg = Eigen::Vector3d::Zero();
+  avg_.setZero();
 
   for (size_t i = 0; i < foot_names.size(); ++i)
   {
-    const auto& pos = foot_positions[foot_names[i]];
+    const Eigen::Vector3d& pos = foot_positions[foot_names[i]];
     A_.row(i) << pos.x(), pos.y(), 1.0;
     b_(i) = -pos.z();
-    avg += pos;
+    avg_ += pos;
   }
 
-  world_X_terrain_ = avg / static_cast<double>(foot_names.size());
+  world_X_terrain_ = avg_ / static_cast<double>(foot_names.size());
 }
 
 void TerrainEstimator::reset()

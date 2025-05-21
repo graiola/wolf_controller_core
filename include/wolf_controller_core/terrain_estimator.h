@@ -118,6 +118,18 @@ private:
 
     // Second-order filter for roll and pitch [roll, pitch, unused]
     XBot::Utils::SecondOrderFilter<Eigen::Vector3d> rpy_filter_;
+
+    // Support values
+    Eigen::Matrix3d terrain_rotation_;
+    Eigen::Vector3d x_axis_;
+    Eigen::Vector3d y_axis_;
+    Eigen::Vector3d z_axis_;
+    Eigen::Vector3d rpy_;
+    Eigen::Vector3d terrain_rpy_;
+    Eigen::Vector3d avg_;
+    Eigen::Vector3d terrain_params_;
+    Eigen::Vector3d filtered_rpy_;    
+
 };
 
 } // namespace wolf_controller
