@@ -107,7 +107,7 @@ public:
 
   void setStepHeadingRate(const double& heading_rate);
 
-  void setTerrainRotation(const Eigen::Matrix3d& world_R_terrain);
+  void setTerrainTransform(const Eigen::Affine3d& world_T_terrain);
 
   void setStepHeight(const double& height);
 
@@ -139,6 +139,8 @@ public:
 
 protected:
 
+  Eigen::Vector3d projectToTerrain(const Eigen::Vector3d& point);
+
   inline static int _id = 0;
   int trajectory_id;
 
@@ -160,9 +162,16 @@ protected:
 
 private:
 
+  /** @brief Transform between terrain frame and world, it is used to adapt
+      the swing trajectory to align with the terrain */
+  Eigen::Affine3d world_T_terrain_;
   /** @brief Rotation between terrain frame and world, it is used to adapt
       the swing trajectory to align with the terrain */
   Eigen::Matrix3d world_R_terrain_;
+  /** @brief Terrain normal */
+  Eigen::Vector3d terrain_normal_;
+  /** @brief Terrain central point */
+  Eigen::Vector3d terrain_point_;
   /** @brief Check if the trajectory cycle is ended */
   bool trajectory_finished_;
   /** @brief Trajectory pose reference output */
@@ -187,11 +196,14 @@ private:
   Eigen::Matrix3d world_Rz_swing_;
   Eigen::Matrix3d terrain_R_swing_;
   Eigen::Matrix3d terrain_R_world_;
+  Eigen::Vector3d swing_target_;
+  Eigen::Vector3d projected_target_; 
   /** @brief Reflex generator */
   friend class TrajectoryReflex;
   TrajectoryReflex::Ptr reflex_;
   bool compute_reflex_trajectory_;
   bool activate_step_reflex_;
+  bool use_terrain_projection_;
 };
 
 } // namespace

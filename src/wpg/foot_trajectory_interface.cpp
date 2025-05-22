@@ -21,8 +21,9 @@ using namespace wolf_controller_utils;
 TrajectoryInterface::TrajectoryInterface()
   :trajectory_id(_id++)
   ,activate_step_reflex_(false)
+  ,use_terrain_projection_(false)
 {
-  pose_reference_ = initial_pose_ = Eigen::Affine3d::Identity();
+  pose_reference_ = initial_pose_ = world_T_terrain_ = Eigen::Affine3d::Identity();
   twist_reference_.setZero();
   swing_frequency_ = 0.0;
   time_ = 0.0;
@@ -32,6 +33,9 @@ TrajectoryInterface::TrajectoryInterface()
   height_ = 0.0;
   world_R_terrain_ = terrain_R_world_ = terrain_R_swing_ = world_Rz_swing_ = Eigen::Matrix3d::Identity();
   Sz_ = Ear_ = Eigen::Matrix3d::Zero();
+
+  terrain_normal_ << 0.0, 0.0, 0.1;
+  terrain_point_  << 0.0, 0.0, 0.0;
 
   trajectory_finished_ = true;
 #ifdef RT_LOGGER
@@ -98,9 +102,9 @@ void TrajectoryInterface::setStepHeadingRate(const double& heading_rate)
   heading_rate_ = heading_rate;
 }
 
-void TrajectoryInterface::setTerrainRotation(const Eigen::Matrix3d& world_R_terrain)
+void TrajectoryInterface::setTerrainTransform(const Eigen::Affine3d& world_T_terrain)
 {
-  world_R_terrain_ = world_R_terrain;
+  world_T_terrain_ = world_T_terrain;
 }
 
 void TrajectoryInterface::setStepHeight(const double& height)
@@ -151,9 +155,19 @@ double TrajectoryInterface::getSwingFrequency()
   return swing_frequency_;
 }
 
+Eigen::Vector3d TrajectoryInterface::projectToTerrain(const Eigen::Vector3d& point)
+{
+  double distance = terrain_normal_.dot(point - terrain_point_);
+  return point - distance * terrain_normal_;
+}
+
 void TrajectoryInterface::update(const double& period,const Eigen::Vector3d& contact_force)
 {
   time_ += period;
+
+  world_R_terrain_ = world_T_terrain_.linear();
+  terrain_normal_  = world_T_terrain_.linear().col(2);
+  terrain_point_   = world_T_terrain_.translation();
 
   // Update the rotation between the swing frame and world
   double c = std::cos(heading_);
@@ -184,7 +198,20 @@ void TrajectoryInterface::update(const double& period,const Eigen::Vector3d& con
   terrain_R_world_.noalias() = world_R_terrain_.transpose();
   terrain_R_swing_.noalias() = terrain_R_world_ * world_Rz_swing_;
   xyz_rotated_.noalias() = terrain_R_swing_ * xyz_;
-  pose_reference_.translation() = initial_pose_.translation() + xyz_rotated_;
+
+  if(!use_terrain_projection_)
+    pose_reference_.translation() = initial_pose_.translation() + xyz_rotated_;
+  else
+  {
+    // Project the z on the terrain
+    swing_target_ = initial_pose_.translation() + xyz_rotated_;
+    projected_target_ = projectToTerrain(swing_target_);
+
+    double alpha = std::sin(M_PI * swing_frequency_ * time_);
+    pose_reference_.translation() = swing_target_;
+    pose_reference_.translation().z() = (1 - alpha) * swing_target_.z() + alpha * projected_target_.z();
+  }
+
   position_reference_ = pose_reference_.translation(); // For visualization only
 
   // Rotate the trajectory velocity wrt world

@@ -164,7 +164,7 @@ public:
 
   double getVelocityFactor();
 
-  void setTerrainRotation(const Eigen::Matrix3d& world_R_terrain);
+  void setTerrainTransform(const Eigen::Affine3d& world_T_terrain);
 
   void setStepLength(const double& length);
 

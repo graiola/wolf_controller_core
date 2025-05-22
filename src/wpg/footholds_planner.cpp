@@ -204,7 +204,7 @@ void FootholdsPlanner::update(const double& period, const Eigen::Vector3d& base_
     gait_generator_->setStepHeight(foot_names[i], steps_height_[foot_names[i]]);
     gait_generator_->setStepHeadingRate(foot_names[i], steps_heading_rate_[foot_names[i]]);
   }
-  gait_generator_->setTerrainRotation(world_T_terrain_.linear());
+  gait_generator_->setTerrainTransform(world_T_terrain_);
 
   if(state_machine_->getCurrentState() == StateMachine::ACTIVE)
   {

@@ -438,10 +438,10 @@ double GaitGenerator::getVelocityFactor()
   return gait_buffer_[current_gait_idx_]->getVelocityFactor(gait_type_);
 }
 
-void GaitGenerator::setTerrainRotation(const Eigen::Matrix3d& world_R_terrain)
+void GaitGenerator::setTerrainTransform(const Eigen::Affine3d& world_T_terrain)
 {
   for(feet_t::iterator it = feet_.begin(); it!=feet_.end(); ++it)
-    it->second.trajectory->setTerrainRotation(world_R_terrain);
+    it->second.trajectory->setTerrainTransform(world_T_terrain);
 }
 
 void GaitGenerator::setStepLength(const double& length)
