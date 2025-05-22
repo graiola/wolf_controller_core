@@ -282,6 +282,20 @@ void FootholdsPlanner::calculateFootSteps()
       hf_delta_foot_.head(2) =  hf_delta_foot_.head(2) + capture_point_delta_[foot_names[i]];
       //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_foot_: "<<hf_delta_foot_.transpose());
 
+      // 6a) Add stabilizing COM-based shift - This shift helps pull the swing leg toward the COM reference projection in the horizontal frame
+      /*if (use_com_planner_references_)
+      {
+        Eigen::Vector3d com_pos_ref = com_planner_->getComPosition();      // Global COM ref
+        Eigen::Vector3d hf_com_pos_ref = hf_R_base_ * com_pos_ref;         // Project into HF
+
+        Eigen::Vector2d stabilizing_shift = stability_gain_ * (hf_com_pos_ref.head<2>() - hf_X_current_foothold_.head<2>());
+
+        hf_delta_foot_.head(2) += stabilizing_shift;
+
+        // Optional: debug
+        // ROS_DEBUG_STREAM("Stabilizing shift for " << foot_names[i] << ": " << stabilizing_shift.transpose());
+      }*/
+
       // 6) Sum everything to obtain the new foothold displacement w.r.t world
       //world_delta_foot_.setZero();
       //world_delta_foot_.head(2) =  world_R_hf_ * hf_delta_foot_;
