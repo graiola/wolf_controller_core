@@ -53,7 +53,7 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, ComPlanner::
   push_recovery_ = std::make_shared<PushRecovery>(this);
   push_detected_ = false;
   push_recovery_active_ = false;
-  use_com_planner_references_ = false;
+  use_com_planner_references_ = true;
 
   step_height_ = 0.0; // [m]
   step_length_ = 0.0; // [m]
