@@ -535,7 +535,7 @@ void GaitGenerator::update(const double& period)
   for(feet_t::iterator it = feet_.begin(); it != feet_.end(); it++)
   {
 #ifdef REACHING_MOTION
-    it->second.trigger_stance = it->second.contact_state;
+    it->second.trigger_stance = it->second.contact;
 #else
     it->second.trigger_stance = it->second.contact || it->second.trajectory->isFinished(); //CloseLoop with trajectory end
 #endif
