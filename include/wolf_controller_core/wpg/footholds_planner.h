@@ -334,6 +334,11 @@ public:
      */
     GaitGenerator* getGaitGenerator() const;
 
+    /**
+     * @brief set the cut-off frequency for the linear and angular velocity filters
+     */
+    void setVelocityFilterCutoffFrequency(double freq_hz);
+
 private:
 
     void setInitialOffsets();
@@ -394,9 +399,6 @@ private:
     */
     Eigen::Vector3d hf_base_angular_velocity_;
 
-    Eigen::Vector3d hf_base_linear_velocity_filt_;
-    Eigen::Vector3d hf_base_angular_velocity_filt_;
-
     Eigen::Vector3d hf_base_linear_velocity_ref_;
     Eigen::Vector3d hf_base_angular_velocity_ref_;
 
@@ -456,6 +458,10 @@ private:
     Eigen::Affine3d tmp_affine3d_;
     Eigen::Affine3d tmp_affine3d_1_;
     Eigen::Affine3d tmp_matrix3d_;
+
+    // Filters
+    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> linear_velocity_filter_;
+    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> angular_velocity_filter_;
 };
 
 } // namespace

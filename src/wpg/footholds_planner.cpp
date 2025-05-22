@@ -63,6 +63,9 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerato
   base_angular_velocity_cmd_pitch_ = 0.0; // [rad/s]
   base_angular_velocity_cmd_yaw_   = 0.0; // [rad/s]
 
+  double omega = 2.0 * M_PI * 3; // 3Hz
+  linear_velocity_filter_.setOmega(omega);
+  angular_velocity_filter_.setOmega(omega);
   reset();
 #ifdef RT_LOGGER
   RtLogger::getLogger().addPublisher(TOPIC(des_base_height),base_position_(2));
@@ -326,14 +329,12 @@ void FootholdsPlanner::resetBaseAngularVelocity()
 {
   hf_base_angular_velocity_.setZero();
   hf_base_angular_velocity_ref_.setZero();
-  hf_base_angular_velocity_filt_.setZero();
 }
 
 void FootholdsPlanner::resetBaseLinearVelocity()
 {
   hf_base_linear_velocity_.setZero();
   hf_base_linear_velocity_ref_.setZero();
-  hf_base_linear_velocity_filt_.setZero();
 }
 
 void FootholdsPlanner::resetBaseVelocities()
@@ -382,9 +383,11 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
   hf_base_linear_velocity_ref_(1) = f * base_linear_velocity_cmd_y_ * base_linear_velocity_scale_y_;
   hf_base_linear_velocity_ref_(2) = base_linear_velocity_cmd_z_ * base_linear_velocity_scale_z_;
 
-  for(unsigned int i=0;i<3;i++)
-    hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),GAIN); //FIXME hardcoded gain, it should be based on the sampling time
+  //for(unsigned int i=0;i<3;i++)
+  //  hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),GAIN); //FIXME hardcoded gain, it should be based on the sampling time
 
+  linear_velocity_filter_.setTimeStep(period);
+  hf_base_linear_velocity_ = linear_velocity_filter_.process(hf_base_linear_velocity_ref_);
   base_linear_velocity_reference_ = world_R_hf_ * hf_base_linear_velocity_;
 
   base_position_ = base_linear_velocity_reference_ * period + base_position_;
@@ -421,8 +424,11 @@ void FootholdsPlanner::calculateBaseOrientation(const double& period, const Eige
   hf_base_angular_velocity_ref_(1) = base_angular_velocity_cmd_pitch_ * base_angular_velocity_scale_pitch_;
   hf_base_angular_velocity_ref_(2) = base_angular_velocity_cmd_yaw_ * base_angular_velocity_scale_yaw_;
 
-  for(unsigned int i=0;i<3;i++)
-    hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),GAIN);
+  //for(unsigned int i=0;i<3;i++)
+  //  hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),GAIN);
+
+  angular_velocity_filter_.setTimeStep(period);
+  hf_base_angular_velocity_ = angular_velocity_filter_.process(hf_base_angular_velocity_ref_);
 
   base_angular_velocity_reference_ = hf_base_angular_velocity_;
 
@@ -1088,6 +1094,13 @@ double PushRecovery::getScaleValue()
 const std::vector<std::string> &PushRecovery::getOrderedFootNames()
 {
   return ordered_foot_names_;
+}
+
+void FootholdsPlanner::setVelocityFilterCutoffFrequency(double freq_hz)
+{
+  double omega = 2.0 * M_PI * freq_hz;
+  linear_velocity_filter_.setOmega(omega);
+  angular_velocity_filter_.setOmega(omega);
 }
 
 }; // namespace
