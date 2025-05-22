@@ -23,11 +23,12 @@ namespace wolf_controller {
 
 #define GAIN 0.05
 
-FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerator::Ptr gait_generator, QuadrupedRobot::Ptr robot_model, double step_length_max, double step_height_max)
+FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, ComPlanner::Ptr com_planner, GaitGenerator::Ptr gait_generator, QuadrupedRobot::Ptr robot_model, double step_length_max, double step_height_max)
 {
-
   assert(state_machine);
   state_machine_ = state_machine;
+  assert(com_planner);
+  com_planner_ = com_planner;
   assert(gait_generator);
   gait_generator_ = gait_generator;
   assert(robot_model);
@@ -52,6 +53,7 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerato
   push_recovery_ = std::make_shared<PushRecovery>(this);
   push_detected_ = false;
   push_recovery_active_ = false;
+  use_com_planner_references_ = false;
 
   step_height_ = 0.0; // [m]
   step_length_ = 0.0; // [m]
@@ -190,8 +192,10 @@ void FootholdsPlanner::update(const double& period, const Eigen::Vector3d& base_
     if(gait_generator_->isLiftOff(foot_names[i]))
       initializeFootPosition(foot_names[i]);
 
-  calculateFootSteps();
+  // Update the com references
+  com_planner_->update(period,base_linear_velocity_reference_,base_position_reference_(2));
 
+  calculateFootSteps();
 
   for(unsigned int i=0; i<foot_names.size(); i++)
   {
@@ -235,6 +239,13 @@ void FootholdsPlanner::calculateFootSteps()
     {
 
       capture_point_delta_[foot_names[i]] = push_recovery_->getDelta(foot_names[i]);
+
+      // Overwrite the linear velocity references with the com planner ones
+      if(use_com_planner_references_)
+      {
+        hf_base_linear_velocity_.setZero();
+        hf_base_linear_velocity_ = world_R_hf_.transpose() * com_planner_->getComVelocity();
+      }
 
       // 1) Compute the displacement of the foot produced by the linear velocity command
       hf_delta_hip_.setZero(); // \f$\deltaL_{x,y,0}\f$
@@ -388,6 +399,7 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
 
   linear_velocity_filter_.setTimeStep(period);
   hf_base_linear_velocity_ = linear_velocity_filter_.process(hf_base_linear_velocity_ref_);
+  
   base_linear_velocity_reference_ = world_R_hf_ * hf_base_linear_velocity_;
 
   base_position_ = base_linear_velocity_reference_ * period + base_position_;
@@ -993,12 +1005,7 @@ bool PushRecovery::update(const double& period)
     }
   }
 
-  // Compute the capture point
-  constexpr double min_com_height = 0.05; // meters
-  double com_z = std::max(com_pos_(2), min_com_height);
-  double tau = std::sqrt(com_z / GRAVITY);
-
-  capture_point_ = tau * com_vel_.head(2) + com_pos_.head(2); // World
+  capture_point_ = footholds_planner_ptr_->com_planner_->getCapturePoint();
 
   // Reset COM integration if the gait cycle is ended
   if(gait_cycle_ended_.update(footholds_planner_ptr_->gait_generator_->isGaitCycleEnded()))
