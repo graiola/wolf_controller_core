@@ -13,8 +13,8 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <memory>
 #include <Eigen/Core>
 #include <wolf_controller_core/state_estimator.h>
-#include <wolf_controller_core/wpg/footholds_planner.h>
 #include <wolf_controller_core/terrain_estimator.h>
+#include <wolf_controller_core/wpg/gait_generator.h>
 #include <wolf_wbid/quadruped_robot.h>
 
 namespace wolf_controller
@@ -37,13 +37,15 @@ public:
    */
   typedef std::shared_ptr<const ComPlanner> ConstPtr;
 
-  ComPlanner(wolf_wbid::QuadrupedRobot::Ptr robot_model, FootholdsPlanner::Ptr foothold_planner, TerrainEstimator::Ptr terrain_estimator);
+  ComPlanner(wolf_wbid::QuadrupedRobot::Ptr robot_model, GaitGenerator::Ptr gait_generator, TerrainEstimator::Ptr terrain_estimator);
 
-  void update(const double& dt);
+  void update(const double& dt, const Eigen::Vector3d& base_velocity, const double& base_height);
 
   const Eigen::Vector3d& getComVelocity() const;
 
   const Eigen::Vector3d& getComPosition() const;
+
+  const Eigen::Vector2d& getCapturePoint() const;
 
   void reset();
 
@@ -51,16 +53,14 @@ public:
 
   void resetPosition();
 
-  void setFiltersCutoffFreq(const double& hz);
-
 private:
 
   void computeSupportPolygonCenter();
-  void computeComPositionReference(const double& dt);
-  void computeComVelocityReference(const double& dt);
+  void computeComPositionReference(const double& dt, const double& base_height);
+  void computeComVelocityReference(const double& dt, const Eigen::Vector3d& base_velocity);
 
   wolf_wbid::QuadrupedRobot::Ptr robot_model_;
-  FootholdsPlanner::Ptr foothold_planner_;
+  GaitGenerator::Ptr gait_generator_;
   TerrainEstimator::Ptr terrain_estimator_;
   Eigen::Vector3d com_velocity_ref_;
   Eigen::Vector3d com_position_ref_;
@@ -71,9 +71,10 @@ private:
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_position_ref_filter_;
   XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_velocity_ref_filter_;
 
-  double filters_cutoff_freq_;
-
-  bool update_;
+  Eigen::Vector2d dcm_target_;
+  Eigen::Vector2d dcm_nominal_;
+  Eigen::Vector3d com_position_;
+  Eigen::Vector3d com_velocity_;
 
 };
 

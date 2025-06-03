@@ -12,69 +12,81 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <atomic>
+#include <memory>
+#include <map>
 #include <wolf_controller_core/state_estimator.h>
 #include <wolf_controller_utils/tools.h>
 #include <wolf_wbid/quadruped_robot.h>
 
-namespace wolf_controller
-{
+namespace wolf_controller {
 
+/**
+ * @brief TerrainEstimator estimates terrain orientation (pitch/roll) using foot contacts.
+ * 
+ * It fits a plane to the contact foot positions and extracts the slope to update
+ * body posture and height references. Uses second-order filtering for smooth output.
+ */
 class TerrainEstimator {
-
 public:
-
-    const std::string CLASS_NAME = "TerrainEstimator";
-
-    /**
-     * @brief Shared pointer to TerrainEstimator
-     */
-    typedef std::shared_ptr<TerrainEstimator> Ptr;
+    using Ptr = std::shared_ptr<TerrainEstimator>;
+    using ConstPtr = std::shared_ptr<const TerrainEstimator>;
 
     /**
-     * @brief Shared pointer to const TerrainEstimator
+     * @brief Constructor
+     * @param state_estimator Provides current contact states and base pose
+     * @param robot_model Robot model for accessing kinematics and foot transforms
      */
-    typedef std::shared_ptr<const TerrainEstimator> ConstPtr;
-
     TerrainEstimator(StateEstimator::Ptr state_estimator,
                      wolf_wbid::QuadrupedRobot::Ptr robot_model);
 
+    /**
+     * @brief Compute terrain normal and pitch/roll based on foot contacts.
+     * @param dt Time delta for filtering and differentiation
+     * @return True if terrain estimation is valid
+     */
     bool computeTerrainEstimation(const double& dt);
 
+    /// Reset internal state and filters
     void reset();
 
+    // --- Set limits on terrain slope for filtering and validity checks ---
     void setMinRoll(const double min);
     void setMinPitch(const double min);
     void setMaxRoll(const double max);
     void setMaxPitch(const double max);
 
+    // --- Terrain pose in world frame ---
     const double& getRollInWorld() const;
     const double& getPitchInWorld() const;
+
+    // --- Terrain pose in horizontal frame ---
     const double& getRollInHf() const;
     const double& getPitchInHf() const;
 
+    // --- Output values for posture compensation ---
     const Eigen::Vector3d& getPostureAdjustmentDot() const;
 
+    // --- Terrain parameters ---
     const Eigen::Vector3d& getTerrainNormal() const;
-
     const Eigen::Vector3d& getTerrainPositionWorld() const;
-    const Eigen::Vector3d& getTerrainPositionHf()  const;
-
+    const Eigen::Vector3d& getTerrainPositionHf() const;
     const Eigen::Matrix3d& getTerrainOrientationWorld() const;
-    const Eigen::Matrix3d& getTerrainOrientationHf()  const;
-
+    const Eigen::Matrix3d& getTerrainOrientationHf() const;
     const Eigen::Affine3d& getTerrainPoseWorld() const;
-    const Eigen::Affine3d& getTerrainPoseHf()  const;
+    const Eigen::Affine3d& getTerrainPoseHf() const;
 
+    /// @return True if estimated terrain is nearly flat
     bool isOnFlatTerrain();
 
 private:
+    /// Builds A and b matrices from current foot positions for plane fitting
+    void updateFootMatrix();
 
-    void update();
-
+    // Least-squares matrices
     Eigen::MatrixXd A_;
-    Eigen::MatrixXd Ai_;
     Eigen::VectorXd b_;
+
+    // Terrain parameters
     Eigen::Vector3d terrain_normal_;
     Eigen::Vector3d hf_X_terrain_;
     Eigen::Matrix3d hf_R_terrain_;
@@ -83,48 +95,43 @@ private:
     Eigen::Matrix3d world_R_terrain_;
     Eigen::Affine3d world_T_terrain_;
 
+    // Dependencies
     StateEstimator::Ptr state_estimator_;
     wolf_wbid::QuadrupedRobot::Ptr robot_model_;
 
-    double roll_;
-    double pitch_;
+    // Estimated and filtered terrain angles
+    double roll_, pitch_;
+    double estimated_roll_, estimated_pitch_;
+    double max_roll_ = 0.4, max_pitch_ = 0.4;
+    double min_roll_ = -0.4, min_pitch_ = -0.4;
 
-    double estimated_roll_;
-    double estimated_pitch_;
+    // Output values (after filtering)
+    double roll_out_world_, pitch_out_world_;
+    double roll_out_hf_, pitch_out_hf_;
 
-    double roll_filt_;
-    double pitch_filt_;
-
-    double max_roll_;
-    double max_pitch_;
-
-    double min_roll_;
-    double min_pitch_;
-
-    double roll_out_world_;
-    double pitch_out_world_;
-    double roll_out_hf_;
-    double pitch_out_hf_;
-
+    // Posture compensation variables
     double posture_adjustment_;
     double posture_adjustment_dot_;
     double posture_adjustment_prev_;
     Eigen::Vector3d posture_adjustment_dot_world_;
     Eigen::Vector3d posture_adjustment_dot_base_;
 
-    /** @brief Trigger the update of the terrain estimator */
-    std::map<std::string,wolf_controller_utils::Trigger> touchdown_;
-    bool update_;
+    // Second-order filter for roll and pitch [roll, pitch, unused]
+    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> rpy_filter_;
 
-    Eigen::Matrix3d tmp_matrix3d_;
-    Eigen::Vector3d tmp_vector3d_;
-
+    // Support values
+    Eigen::Matrix3d terrain_rotation_;
+    Eigen::Vector3d x_axis_;
+    Eigen::Vector3d y_axis_;
+    Eigen::Vector3d z_axis_;
+    Eigen::Vector3d rpy_;
+    Eigen::Vector3d terrain_rpy_;
+    Eigen::Vector3d avg_;
+    Eigen::Vector3d terrain_params_;
+    Eigen::Vector3d filtered_rpy_;    
 
 };
 
+} // namespace wolf_controller
 
-} // namespace
-
-
-#endif
-
+#endif // TERRAIN_ESTIMATOR_H

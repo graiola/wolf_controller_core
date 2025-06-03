@@ -23,11 +23,12 @@ namespace wolf_controller {
 
 #define GAIN 0.05
 
-FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerator::Ptr gait_generator, QuadrupedRobot::Ptr robot_model, double step_length_max, double step_height_max)
+FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, ComPlanner::Ptr com_planner, GaitGenerator::Ptr gait_generator, QuadrupedRobot::Ptr robot_model, double step_length_max, double step_height_max)
 {
-
   assert(state_machine);
   state_machine_ = state_machine;
+  assert(com_planner);
+  com_planner_ = com_planner;
   assert(gait_generator);
   gait_generator_ = gait_generator;
   assert(robot_model);
@@ -52,6 +53,7 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerato
   push_recovery_ = std::make_shared<PushRecovery>(this);
   push_detected_ = false;
   push_recovery_active_ = false;
+  use_com_planner_references_ = true;
 
   step_height_ = 0.0; // [m]
   step_length_ = 0.0; // [m]
@@ -63,6 +65,9 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, GaitGenerato
   base_angular_velocity_cmd_pitch_ = 0.0; // [rad/s]
   base_angular_velocity_cmd_yaw_   = 0.0; // [rad/s]
 
+  double omega = 2.0 * M_PI * 3; // 3Hz
+  linear_velocity_filter_.setOmega(omega);
+  angular_velocity_filter_.setOmega(omega);
   reset();
 #ifdef RT_LOGGER
   RtLogger::getLogger().addPublisher(TOPIC(des_base_height),base_position_(2));
@@ -187,8 +192,10 @@ void FootholdsPlanner::update(const double& period, const Eigen::Vector3d& base_
     if(gait_generator_->isLiftOff(foot_names[i]))
       initializeFootPosition(foot_names[i]);
 
-  calculateFootSteps();
+  // Update the com references
+  com_planner_->update(period,base_linear_velocity_reference_,base_position_reference_(2));
 
+  calculateFootSteps();
 
   for(unsigned int i=0; i<foot_names.size(); i++)
   {
@@ -233,6 +240,13 @@ void FootholdsPlanner::calculateFootSteps()
 
       capture_point_delta_[foot_names[i]] = push_recovery_->getDelta(foot_names[i]);
 
+      // Overwrite the linear velocity references with the com planner ones
+      if(use_com_planner_references_)
+      {
+        hf_base_linear_velocity_.setZero();
+        hf_base_linear_velocity_ = world_R_hf_.transpose() * com_planner_->getComVelocity();
+      }
+
       // 1) Compute the displacement of the foot produced by the linear velocity command
       hf_delta_hip_.setZero(); // \f$\deltaL_{x,y,0}\f$
       hf_delta_hip_(0) = hf_base_linear_velocity_(0)*1.0/gait_generator_->getSwingFrequency(foot_names[i]);
@@ -267,6 +281,20 @@ void FootholdsPlanner::calculateFootSteps()
       //6) Sum the delta for the push recovery
       hf_delta_foot_.head(2) =  hf_delta_foot_.head(2) + capture_point_delta_[foot_names[i]];
       //ROS_DEBUG_STREAM_NAMED(CLASS_NAME,"hf_delta_foot_: "<<hf_delta_foot_.transpose());
+
+      // 6a) Add stabilizing COM-based shift - This shift helps pull the swing leg toward the COM reference projection in the horizontal frame
+      /*if (use_com_planner_references_)
+      {
+        Eigen::Vector3d com_pos_ref = com_planner_->getComPosition();      // Global COM ref
+        Eigen::Vector3d hf_com_pos_ref = hf_R_base_ * com_pos_ref;         // Project into HF
+
+        Eigen::Vector2d stabilizing_shift = stability_gain_ * (hf_com_pos_ref.head<2>() - hf_X_current_foothold_.head<2>());
+
+        hf_delta_foot_.head(2) += stabilizing_shift;
+
+        // Optional: debug
+        // ROS_DEBUG_STREAM("Stabilizing shift for " << foot_names[i] << ": " << stabilizing_shift.transpose());
+      }*/
 
       // 6) Sum everything to obtain the new foothold displacement w.r.t world
       //world_delta_foot_.setZero();
@@ -326,14 +354,12 @@ void FootholdsPlanner::resetBaseAngularVelocity()
 {
   hf_base_angular_velocity_.setZero();
   hf_base_angular_velocity_ref_.setZero();
-  hf_base_angular_velocity_filt_.setZero();
 }
 
 void FootholdsPlanner::resetBaseLinearVelocity()
 {
   hf_base_linear_velocity_.setZero();
   hf_base_linear_velocity_ref_.setZero();
-  hf_base_linear_velocity_filt_.setZero();
 }
 
 void FootholdsPlanner::resetBaseVelocities()
@@ -382,9 +408,12 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
   hf_base_linear_velocity_ref_(1) = f * base_linear_velocity_cmd_y_ * base_linear_velocity_scale_y_;
   hf_base_linear_velocity_ref_(2) = base_linear_velocity_cmd_z_ * base_linear_velocity_scale_z_;
 
-  for(unsigned int i=0;i<3;i++)
-    hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),GAIN); //FIXME hardcoded gain, it should be based on the sampling time
+  //for(unsigned int i=0;i<3;i++)
+  //  hf_base_linear_velocity_(i) = secondOrderFilter(hf_base_linear_velocity_(i),hf_base_linear_velocity_filt_(i),hf_base_linear_velocity_ref_(i),GAIN); //FIXME hardcoded gain, it should be based on the sampling time
 
+  linear_velocity_filter_.setTimeStep(period);
+  hf_base_linear_velocity_ = linear_velocity_filter_.process(hf_base_linear_velocity_ref_);
+  
   base_linear_velocity_reference_ = world_R_hf_ * hf_base_linear_velocity_;
 
   base_position_ = base_linear_velocity_reference_ * period + base_position_;
@@ -421,8 +450,11 @@ void FootholdsPlanner::calculateBaseOrientation(const double& period, const Eige
   hf_base_angular_velocity_ref_(1) = base_angular_velocity_cmd_pitch_ * base_angular_velocity_scale_pitch_;
   hf_base_angular_velocity_ref_(2) = base_angular_velocity_cmd_yaw_ * base_angular_velocity_scale_yaw_;
 
-  for(unsigned int i=0;i<3;i++)
-    hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),GAIN);
+  //for(unsigned int i=0;i<3;i++)
+  //  hf_base_angular_velocity_(i) = secondOrderFilter(hf_base_angular_velocity_(i),hf_base_angular_velocity_filt_(i),hf_base_angular_velocity_ref_(i),GAIN);
+
+  angular_velocity_filter_.setTimeStep(period);
+  hf_base_angular_velocity_ = angular_velocity_filter_.process(hf_base_angular_velocity_ref_);
 
   base_angular_velocity_reference_ = hf_base_angular_velocity_;
 
@@ -853,6 +885,11 @@ PushRecovery* FootholdsPlanner::getPushRecovery() const
   return push_recovery_.get();
 }
 
+GaitGenerator* FootholdsPlanner::getGaitGenerator() const
+{
+  return gait_generator_.get();
+}
+
 bool FootholdsPlanner::areAllFeetInStance()
 {
   return gait_generator_->areAllFeetInStance();
@@ -982,9 +1019,7 @@ bool PushRecovery::update(const double& period)
     }
   }
 
-  // Compute the capture point
-  double tau =  std::sqrt(std::abs(com_pos_(2))/GRAVITY);
-  capture_point_ = tau * com_vel_.head(2) + com_pos_.head(2); // World
+  capture_point_ = footholds_planner_ptr_->com_planner_->getCapturePoint();
 
   // Reset COM integration if the gait cycle is ended
   if(gait_cycle_ended_.update(footholds_planner_ptr_->gait_generator_->isGaitCycleEnded()))
@@ -1080,6 +1115,13 @@ double PushRecovery::getScaleValue()
 const std::vector<std::string> &PushRecovery::getOrderedFootNames()
 {
   return ordered_foot_names_;
+}
+
+void FootholdsPlanner::setVelocityFilterCutoffFrequency(double freq_hz)
+{
+  double omega = 2.0 * M_PI * freq_hz;
+  linear_velocity_filter_.setOmega(omega);
+  angular_velocity_filter_.setOmega(omega);
 }
 
 }; // namespace

@@ -131,9 +131,6 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
   state_machine_ = std::make_shared<StateMachine>(this);
 
-  gait_generator_ = std::make_shared<GaitGenerator>(robot_model_->getFootNames(),Gait::TROT);
-  foot_holds_planner_ = std::make_shared<FootholdsPlanner>(state_machine_,gait_generator_,robot_model_);
-
   state_estimator_   = std::make_shared<StateEstimator>(state_machine_,robot_model_);
 
   terrain_estimator_ = std::make_shared<TerrainEstimator>(state_estimator_,robot_model_);
@@ -142,10 +139,13 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   terrain_estimator_->setMaxPitch(M_PI);
   terrain_estimator_->setMinPitch(-M_PI);
 
+  gait_generator_ = std::make_shared<GaitGenerator>(robot_model_->getFootNames(),Gait::TROT);
+  com_planner_ = std::make_shared<ComPlanner>(robot_model_,gait_generator_,terrain_estimator_);
+  foot_holds_planner_ = std::make_shared<FootholdsPlanner>(state_machine_,com_planner_,gait_generator_,robot_model_);
+
+
   impedance_     = std::make_shared<Impedance>(state_estimator_,robot_model_);
   impedance_->startInertiaCompensation(false);
-
-  com_planner_ = std::make_shared<ComPlanner>(robot_model_,foot_holds_planner_,terrain_estimator_);
 
   PRINT_INFO_NAMED(CLASS_NAME,"Create ID Problem...");
   id_prob_ = std::make_unique<IDProblem>(robot_model_);
@@ -505,7 +505,7 @@ void ControllerCore::reset()
   state_estimator_->resetGyroscopeIntegration();
   state_estimator_->startContactComputation();
   // Terrain Estimator
-  //terrain_estimator_->reset();
+  terrain_estimator_->reset();
   // Footholds planner with gait generator
   foot_holds_planner_->reset();
   foot_holds_planner_->setBasePosition(state_estimator_->getFloatingBasePosition());
@@ -547,7 +547,7 @@ void ControllerCore::updateWpg(const double &dt)
   foot_holds_planner_->update(dt);
 
   // Update the CoM position and velocity reference
-  com_planner_->update(dt);
+  //com_planner_->update(dt);
 
   // Update the base references based on the com desired position
   updateBaseReferences(com_planner_->getComPosition(),com_planner_->getComVelocity(),foot_holds_planner_->getBaseRotationReference());

@@ -47,7 +47,7 @@ public:
      */
     typedef std::shared_ptr<const StateEstimator> ConstPtr;
 
-    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER,ODOMETRY};
+    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER,ODOMETRY,ESTIMATED_Z};
 
     StateEstimator(StateMachine::Ptr state_machine, wolf_wbid::QuadrupedRobot::Ptr robot_model);
 
@@ -131,7 +131,9 @@ public:
 
     const Eigen::Vector3d& getGroundTruthBaseAngularVelocity() const;
 
-    const double& getEstimatedBaseHeight() const;
+    const double& getBaseHeightInBasefoot() const;
+
+    const double& getBaseHeightInWorld() const;
 
     void startContactComputation();
 
@@ -245,6 +247,9 @@ private:
 
     /** @brief KF base estimation */
     wolf_estimation::KalmanFilterEstimatorInterface::Ptr kf_estimation_;
+
+    /** @brief QP base estimation */
+    OpenSoT::FloatingBaseEstimation::Ptr qp_estimation_;
 
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;
