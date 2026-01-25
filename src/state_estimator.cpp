@@ -99,10 +99,10 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   const std::vector<std::string>& limb_names = robot_model_->getLimbNames();
 
   // Odom estimator
-  odom_estimator_ = std::make_shared<RobotOdomEstimator>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),
-                                                         robot_model_->getFootNames(),robot_model_->getImuSensorName(),
-                                                         robot_model_->getBaseLinkName(),true,false,true,"odometry");
-  odom_estimator_->setTwistInLocalFrame(true);
+  //odom_estimator_ = std::make_shared<RobotOdomEstimator>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),
+  //                                                       robot_model_->getFootNames(),robot_model_->getImuSensorName(),
+  //                                                       robot_model_->getBaseLinkName(),true,false,true,"odometry");
+  //odom_estimator_->setTwistInLocalFrame(true);
 
   // KF estimator
   //kf_estimation_ = std::make_shared<KalmanFilterEstimatorPinocchio>(robot_model_->getRobotName(),wolf_controller::_period);
@@ -112,7 +112,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   Eigen::Matrix6d contact_matrix;
   contact_matrix.setZero();
   contact_matrix.block(0,0,3,3) << Eigen::Matrix3d::Identity();
-  qp_estimation_ = std::make_shared<wolf_estimation::qp_estimation>(robot_model_,robot_model_->getFootNames(),contact_matrix);
+  //qp_estimation_ = std::make_shared<wolf_estimation::qp_estimation>(robot_model_,robot_model_->getFootNames(),contact_matrix);
 
   int n_dofs = robot_model_->getJointNum();
   joint_positions_.resize(static_cast<Eigen::Index>(n_dofs));
@@ -197,7 +197,7 @@ void StateEstimator::reset()
   floating_base_velocity_qp_.setZero();
   estimated_z_ = 0.0;
 
-  odom_estimator_->reset();
+  //odom_estimator_->reset();
   kf_estimation_->reset();
 }
 
@@ -343,12 +343,12 @@ void StateEstimator::setContactForce(const std::string& name, const Eigen::Vecto
   }
 }
 
-void StateEstimator::setDesiredContactState(const string &name, const bool &state)
+void StateEstimator::setDesiredContactState(const std::string &name, const bool &state)
 {
   des_contact_states_[name] = state;
 }
 
-void StateEstimator::setDesiredContactForce(const string &name, const Eigen::Vector3d &force)
+void StateEstimator::setDesiredContactForce(const std::string &name, const Eigen::Vector3d &force)
 {
   des_contact_forces_[name] = force;
 }
@@ -383,7 +383,7 @@ const std::map<std::string,bool>& StateEstimator::getContacts() const
   return contact_states_;
 }
 
-Eigen::Vector3d& StateEstimator::getContactForce(const string& contact_name)
+Eigen::Vector3d& StateEstimator::getContactForce(const std::string& contact_name)
 {
   return contact_forces_[contact_name];
 }
@@ -574,7 +574,7 @@ void StateEstimator::updateFloatingBase(const double& period)
   robot_model_->setJointPosition(joint_positions_);
 
   // Update the robot odom
-  if(estimation_position == ODOMETRY || estimation_orientation == ODOMETRY)
+  /*if(estimation_position == ODOMETRY || estimation_orientation == ODOMETRY)
   {
     if(!odom_estimator_->isInitialized())
     {
@@ -597,7 +597,7 @@ void StateEstimator::updateFloatingBase(const double& period)
       state_machine_->setCurrentState(StateMachine::ANOMALY);
       return;
     }
-  }
+  }*/
 
   // Update the KF
   if(estimation_position == KALMAN_FILTER || estimation_orientation == KALMAN_FILTER)
@@ -619,13 +619,13 @@ void StateEstimator::updateFloatingBase(const double& period)
   }
 
   // Update the qp
-  if(estimation_position == ESTIMATED_Z)
+  /*if(estimation_position == ESTIMATED_Z)
   {
     for(unsigned int i = 0; i<robot_model_->getFootNames().size(); i++)
       qp_estimation_->setContactState(robot_model_->getFootNames()[i],contact_states_[robot_model_->getFootNames()[i]]);
 
     qp_estimation_->update();
-  }
+  }*/
 
   // Note: we assume that the IMU is orientated as the base/waist of the robot
   // if this is not the case, it is necessary to add a transfomation from the IMU frame to the
@@ -640,9 +640,9 @@ void StateEstimator::updateFloatingBase(const double& period)
     rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
     break;
   case estimation_t::ODOMETRY:
-    floating_base_pose_.linear() = odom_estimator_->getBasePose().linear();
-    floating_base_velocity_.segment(3,3) << odom_estimator_->getBaseTwist().segment(3,3);
-    rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
+    //floating_base_pose_.linear() = odom_estimator_->getBasePose().linear();
+    //floating_base_velocity_.segment(3,3) << odom_estimator_->getBaseTwist().segment(3,3);
+    //rotToRpy(floating_base_pose_.linear(),floating_base_rpy_);
     break;
   case estimation_t::KALMAN_FILTER:
     floating_base_pose_.linear() = kf_estimation_->getOrientation().toRotationMatrix();
@@ -722,8 +722,8 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_position_ << 0.0,0.0,0.0;
     break;
   case estimation_t::ODOMETRY:
-    floating_base_velocity_.segment(0,3) = odom_estimator_->getBaseTwist().segment(0,3);
-    floating_base_position_ = odom_estimator_->getBasePose().translation().segment(0,3);
+    //floating_base_velocity_.segment(0,3) = odom_estimator_->getBaseTwist().segment(0,3);
+    //floating_base_position_ = odom_estimator_->getBasePose().translation().segment(0,3);
     break;
   case estimation_t::KALMAN_FILTER:
     floating_base_position_ = kf_estimation_->getPosition();
@@ -734,9 +734,9 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_position_ = gt_position_;
     break;
   case estimation_t::ESTIMATED_Z:
-    qp_estimation_->getFloatingBaseTwist(floating_base_velocity_qp_);
-    floating_base_velocity_.segment(0,3) = floating_base_velocity_qp_.segment(0,3);
-    floating_base_position_ << 0.0,0.0,estimated_z_;
+    //qp_estimation_->getFloatingBaseTwist(floating_base_velocity_qp_);
+    //floating_base_velocity_.segment(0,3) = floating_base_velocity_qp_.segment(0,3);
+    //floating_base_position_ << 0.0,0.0,estimated_z_;
     break;
   default:
     // The base does not move

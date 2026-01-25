@@ -149,6 +149,8 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
   PRINT_INFO_NAMED(CLASS_NAME,"Create ID Problem...");
   id_prob_ = std::make_unique<IDProblem>(robot_model_);
+  id_prob_->enableDebug(true);
+  id_prob_->setDebugMask(wolf_wbid::IDProblem::DBG_ALL);
   PRINT_INFO_NAMED(CLASS_NAME,"...done!");
 
   solver_failures_cnt_   = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
@@ -338,7 +340,7 @@ void ControllerCore::emergencyStop()
   state_machine_->setCurrentState(StateMachine::ANOMALY);
 }
 
-bool ControllerCore::selectGait(const string& gait)
+bool ControllerCore::selectGait(const std::string& gait)
 {
   if(gait_generator_)
   {

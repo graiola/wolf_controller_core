@@ -8,7 +8,7 @@
 
 #include <wolf_controller_core/wpg/footholds_planner.h>
 #include <wolf_controller_utils/filters.h>
-#include <OpenSoT/utils/cartesian_utils.h>
+//#include <OpenSoT/utils/cartesian_utils.h>
 
 // RT LOGGER
 #ifdef RT_LOGGER
@@ -20,6 +20,17 @@ using namespace wolf_controller_utils;
 using namespace wolf_wbid;
 
 namespace wolf_controller {
+
+inline static int pnpoly(int nvert, float *vertx, float *verty, float testx, float testy)
+{
+    int i, j, c = 0;
+      for (i = 0, j = nvert-1; i < nvert; j = i++) {
+        if ( ((verty[i]>testy) != (verty[j]>testy)) &&
+          (testx < (vertx[j]-vertx[i]) * (testy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
+            c = !c;
+      }
+      return c;
+}
 
 #define GAIN 0.05
 
@@ -1029,7 +1040,7 @@ bool PushRecovery::update(const double& period)
   float testy = static_cast<float>(capture_point_.y());
 
   // Check if the capture point is outside the support polygon
-  if(cartesian_utils::pnpoly(N_LEGS,vertx_.data(),verty_.data(),testx,testy)==0)
+  if(pnpoly(N_LEGS,vertx_.data(),verty_.data(),testx,testy)==0)
     push_detected_ = true;
   else
     push_detected_ = false;

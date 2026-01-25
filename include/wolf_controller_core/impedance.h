@@ -14,6 +14,7 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <atomic>
 #include <Eigen/Core>
 #include <wolf_controller_core/state_estimator.h>
+#include <wolf_controller_utils/common.h>
 #include <wolf_wbid/quadruped_robot.h>
 
 namespace wolf_controller

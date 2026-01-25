@@ -24,9 +24,9 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_utils/tools.h>
 
 // WoLF estimation
-#include <wolf_estimation/robot_odom/robot_odom.h>
+//#include <wolf_estimation/robot_odom/robot_odom.h>
 #include <wolf_estimation/estimation/kf_estimation_pinocchio.h>
-#include <wolf_estimation/estimation/qp_estimation.h>
+//#include <wolf_estimation/estimation/qp_estimation.h>
 
 namespace wolf_controller
 {
@@ -243,13 +243,13 @@ private:
     std::atomic<bool> use_external_contact_states_;
 
      /** @brief Odom estimation based on qp taking in account the linear and angular velocities of the base */
-    wolf_estimation::RobotOdomEstimator::Ptr odom_estimator_;
+    //wolf_estimation::RobotOdomEstimator::Ptr odom_estimator_;
 
     /** @brief KF base estimation */
     wolf_estimation::KalmanFilterEstimatorInterface::Ptr kf_estimation_;
 
     /** @brief QP base estimation */
-    OpenSoT::FloatingBaseEstimation::Ptr qp_estimation_;
+    //OpenSoT::FloatingBaseEstimation::Ptr qp_estimation_;
 
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;

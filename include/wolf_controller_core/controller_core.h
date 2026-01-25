@@ -22,7 +22,6 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_core/wpg/com_planner.h>
 #include <wolf_controller_core/state_estimator.h>
 #include <wolf_controller_core/terrain_estimator.h>
-#include <wolf_estimation/robot_odom/robot_odom.h>
 #include <wolf_controller_utils/tools.h>
 #include <wolf_wbid/id_problem.h>
 
