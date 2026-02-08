@@ -41,18 +41,21 @@ find_package(rt_gui_ros QUIET)
 # RT logger
 find_package(rt_logger QUIET)
 
-if(${rt_gui_ros_FOUND})
-    message(STATUS "Found rt_gui, creating interface for wolf_controller.")
+option(WOLF_ENABLE_RT_GUI "Enable rt_gui_ros integration" ON)
+option(WOLF_ENABLE_RT_LOGGER "Enable rt_logger integration" ON)
+
+if(${rt_gui_ros_FOUND} AND WOLF_ENABLE_RT_GUI)
+    message(STATUS "rt_gui enabled for wolf_controller.")
     add_definitions(-DRT_GUI)
 else()
-    message(STATUS "rt_gui not found.")
+    message(STATUS "rt_gui disabled or not found.")
 endif()
 
-if(${rt_logger_FOUND})
-    message(STATUS "Found rt_logger, creating loggers for wolf_controller.")
+if(${rt_logger_FOUND} AND WOLF_ENABLE_RT_LOGGER)
+    message(STATUS "rt_logger enabled for wolf_controller.")
     add_definitions(-DRT_LOGGER)
 else()
-    message(STATUS "rt_logger not found.")
+    message(STATUS "rt_logger disabled or not found.")
 endif()
 
 include_directories(
@@ -73,7 +76,13 @@ add_library(wpg SHARED
     src/wpg/foot_trajectory_interface.cpp
     src/wpg/footholds_planner.cpp
     src/wpg/gait_generator.cpp)
-target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_ros_LIBRARIES} ${rt_logger_LIBRARIES})
+target_link_libraries(wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES})
+if(${rt_gui_ros_FOUND} AND WOLF_ENABLE_RT_GUI)
+  target_link_libraries(wpg ${rt_gui_ros_LIBRARIES})
+endif()
+if(${rt_logger_FOUND} AND WOLF_ENABLE_RT_LOGGER)
+  target_link_libraries(wpg ${rt_logger_LIBRARIES})
+endif()
 
 add_library(controller_core SHARED
     src/controller_core.cpp
@@ -82,7 +91,13 @@ add_library(controller_core SHARED
     src/impedance.cpp
     src/terrain_estimator.cpp
     src/force_estimator.cpp)
-target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES} ${rt_gui_ros_LIBRARIES} ${rt_logger_LIBRARIES})
+target_link_libraries(controller_core wpg ${wolf_wbid_LIBRARIES} ${wolf_estimation_LIBRARIES} ${wolf_controller_utils_LIBRARIES})
+if(${rt_gui_ros_FOUND} AND WOLF_ENABLE_RT_GUI)
+  target_link_libraries(controller_core ${rt_gui_ros_LIBRARIES})
+endif()
+if(${rt_logger_FOUND} AND WOLF_ENABLE_RT_LOGGER)
+  target_link_libraries(controller_core ${rt_logger_LIBRARIES})
+endif()
 
 
 install(
