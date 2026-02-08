@@ -12,10 +12,11 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 
 #include <memory>
 #include <Eigen/Core>
+#include <wolf_controller_utils/filters.h>
 #include <wolf_controller_core/state_estimator.h>
 #include <wolf_controller_core/terrain_estimator.h>
 #include <wolf_controller_core/wpg/gait_generator.h>
-#include <wolf_wbid/quadruped_robot.h>
+#include <wolf_wbid/core/quadruped_robot.h>
 
 namespace wolf_controller
 {
@@ -68,8 +69,8 @@ private:
   Eigen::Vector3d support_polygon_center_;
   std::vector<Eigen::Vector3d> support_polygon_edges_;
 
-  XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_position_ref_filter_;
-  XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_velocity_ref_filter_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> com_position_ref_filter_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> com_velocity_ref_filter_;
 
   Eigen::Vector2d dcm_target_;
   Eigen::Vector2d dcm_nominal_;

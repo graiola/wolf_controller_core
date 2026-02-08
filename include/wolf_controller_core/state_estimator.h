@@ -18,7 +18,7 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <atomic>
 
 // WoLF wbid
-#include <wolf_wbid/quadruped_robot.h>
+#include <wolf_wbid/core/quadruped_robot.h>
 
 // WoLF utils
 #include <wolf_controller_utils/tools.h>

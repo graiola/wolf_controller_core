@@ -9,6 +9,8 @@
 #include <wolf_controller_core/common.h>
 #include <wolf_controller_utils/geometry.h>
 
+#include <unordered_map>
+
 #include <wolf_estimation/estimation/kf_estimation_pinocchio.h>
 #include <wolf_estimation/estimation/kf_estimation_rbdl.h>
 
@@ -97,6 +99,10 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
 
   const std::vector<std::string>& contact_names = robot_model_->getContactNames();
   const std::vector<std::string>& limb_names = robot_model_->getLimbNames();
+  const std::vector<std::string>& foot_names = robot_model_->getFootNames();
+  const std::vector<std::string>& leg_names = robot_model_->getLegNames();
+  const std::vector<std::string>& ee_names = robot_model_->getEndEffectorNames();
+  const std::vector<std::string>& arm_names = robot_model_->getArmNames();
 
   // Odom estimator
   //odom_estimator_ = std::make_shared<RobotOdomEstimator>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),
@@ -106,7 +112,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
 
   // KF estimator
   //kf_estimation_ = std::make_shared<KalmanFilterEstimatorPinocchio>(robot_model_->getRobotName(),wolf_controller::_period);
-  kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),robot_model_->getSrdfString(),wolf_controller::_period);
+  kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_, wolf_controller::_period);
 
   // QP Estimator
   Eigen::Matrix6d contact_matrix;
@@ -166,11 +172,36 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   std::vector<int> dofs = {0,1,2}; // x y z
   std::vector<std::string> chain(1);
 
-  assert(limb_names.size() == contact_names.size());
-  for(unsigned int i=0;i<limb_names.size();i++)
+  // Build contact->limb mapping (feet->legs, ee->arms). Fallback to index if aligned.
+  std::unordered_map<std::string, std::string> contact_to_limb;
+  const size_t n_legs = std::min(foot_names.size(), leg_names.size());
+  for(size_t i = 0; i < n_legs; ++i) {
+    contact_to_limb[foot_names[i]] = leg_names[i];
+  }
+  const size_t n_arms = std::min(ee_names.size(), arm_names.size());
+  for(size_t i = 0; i < n_arms; ++i) {
+    contact_to_limb[ee_names[i]] = arm_names[i];
+  }
+
+  for(size_t i = 0; i < contact_names.size(); ++i)
   {
-    chain[0] = limb_names[i];
-    force_torque_sensors_[contact_names[i]] = force_estimation_->add_link(contact_names[i],dofs,chain);
+    auto it = contact_to_limb.find(contact_names[i]);
+    if(it != contact_to_limb.end()) {
+      chain[0] = it->second;
+      force_torque_sensors_[contact_names[i]] = force_estimation_->add_link(contact_names[i],dofs,chain);
+      continue;
+    }
+
+    // Fallback: use index alignment if provided by SRDF
+    if(i < limb_names.size()) {
+      chain[0] = limb_names[i];
+      force_torque_sensors_[contact_names[i]] = force_estimation_->add_link(contact_names[i],dofs,chain);
+      continue;
+    }
+
+    PRINT_WARN_NAMED(CLASS_NAME,
+                     "No limb mapping for contact '" << contact_names[i]
+                     << "'. Skipping force estimation for this contact.");
   }
 #ifdef RT_LOGGER
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_position)   ,floating_base_position_);
@@ -501,9 +532,16 @@ void StateEstimator::updateContactState()
   for(unsigned int i=0; i<foot_names.size(); i++)
   {
     tmp_vector3d_.setZero(); // contact_force_foot
+    auto it = force_torque_sensors_.find(foot_names[i]);
+    if(it == force_torque_sensors_.end() || !it->second)
+    {
+      contact_states_[foot_names[i]] = false;
+      contact_forces_[foot_names[i]].setZero();
+      continue;
+    }
     // If we don't have a measurement of the contact forces, estimate them
     if(!use_external_contact_forces_)
-      force_torque_sensors_[foot_names[i]]->getForce(tmp_vector3d_);
+      it->second->getForce(tmp_vector3d_);
     else
       tmp_vector3d_ = contact_forces_[foot_names[i]];
 
@@ -520,6 +558,7 @@ void StateEstimator::updateContactState()
     {
       contact_states_[foot_names[i]] = true;
     }
+
   }
 
   // Update contact state for the arm end-effectors
@@ -528,7 +567,14 @@ void StateEstimator::updateContactState()
   {
 
     tmp_vector3d_.setZero();
-    force_torque_sensors_[ee_names[i]]->getForce(tmp_vector3d_); // tmp_vector3d_ = contact_force_arm
+    auto it = force_torque_sensors_.find(ee_names[i]);
+    if(it == force_torque_sensors_.end() || !it->second)
+    {
+      contact_states_[ee_names[i]] = false;
+      contact_forces_[ee_names[i]].setZero();
+      continue;
+    }
+    it->second->getForce(tmp_vector3d_); // tmp_vector3d_ = contact_force_arm
 
     tmp_vector3d_ = robot_model_->getEndEffectorPoseInWorld(ee_names[i]) * tmp_vector3d_; // contact_force_world = world_T_ee * contact_force_ee
 

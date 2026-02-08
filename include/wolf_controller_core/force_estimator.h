@@ -10,7 +10,7 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #ifndef FORCE_ESTIMATOR_H
 #define FORCE_ESTIMATOR_H
 
-#include <XBotInterface/ModelInterface.h>
+#include <wolf_wbid/core/quadruped_robot.h>
 #include <algorithm>
 
 namespace wolf_controller
@@ -94,7 +94,7 @@ public:
      * with respect to the robot state
      * @param svd_threshold: threshold for solution regularization (close to singularities)
      */
-  ForceEstimator(XBot::ModelInterface::ConstPtr model,
+  ForceEstimator(wolf_wbid::QuadrupedRobot::Ptr model,
                  double svd_threshold = DEFAULT_SVD_THRESHOLD);
 
   /**
@@ -122,7 +122,7 @@ public:
 
 protected:
 
-  XBot::ModelInterface::ConstPtr model_;
+  wolf_wbid::QuadrupedRobot::Ptr model_;
 
 private:
 
@@ -166,7 +166,7 @@ public:
 
   static constexpr double DEFAULT_OBS_BW = 4.0;
 
-  ForceEstimatorMomentumBased(XBot::ModelInterface::ConstPtr model,
+  ForceEstimatorMomentumBased(wolf_wbid::QuadrupedRobot::Ptr model,
                               double rate,
                               double svd_threshold = DEFAULT_SVD_THRESHOLD,
                               double obs_bw = DEFAULT_OBS_BW);

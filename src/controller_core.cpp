@@ -12,6 +12,7 @@
 
 // WoLF controller utils
 #include <wolf_controller_utils/tools.h>
+#include <wolf_wbid/core/quadruped_robot_rbdl.h>
 
 // RT GUI
 #ifdef RT_GUI
@@ -19,7 +20,6 @@
 using namespace rt_gui;
 #endif
 
-using namespace XBot;
 using namespace wolf_controller_utils;
 using namespace wolf_wbid;
 
@@ -67,7 +67,6 @@ ControllerCore::ControllerCore()
   ,previous_mode_(WPG)
   ,posture_(DOWN)
 {
-  XBot::Logger::SetVerbosityLevel(XBot::Logger::Severity::HIGH);
 }
 
 ControllerCore::~ControllerCore()
@@ -89,13 +88,15 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
     _rt_gui_group = "controller/"+_robot_name;
 
   // Create the robot model
-  robot_model_ = std::make_shared<wolf_wbid::QuadrupedRobot>(robot_name,urdf,srdf);
+  robot_model_ = std::make_shared<wolf_wbid::QuadrupedRobotRBDL>(robot_name,urdf,srdf);
   n_joints_    = robot_model_->getJointNum();
   joint_names_ = robot_model_->getJointNames();
 
   PRINT_INFO_NAMED(CLASS_NAME,"Number of joints: "<<n_joints_);
 
   _robot_model_name = robot_model_->getRobotModelName();
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Robot model name: "<<_robot_model_name);
 
   // Resize the variables
   joint_positions_.resize(static_cast<Eigen::Index>(n_joints_));
@@ -131,7 +132,11 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
   state_machine_ = std::make_shared<StateMachine>(this);
 
+  PRINT_INFO_NAMED(CLASS_NAME,"State machine created");
+
   state_estimator_   = std::make_shared<StateEstimator>(state_machine_,robot_model_);
+
+  PRINT_INFO_NAMED(CLASS_NAME,"State estimator created");
 
   terrain_estimator_ = std::make_shared<TerrainEstimator>(state_estimator_,robot_model_);
   terrain_estimator_->setMaxRoll(M_PI);
@@ -139,19 +144,30 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   terrain_estimator_->setMaxPitch(M_PI);
   terrain_estimator_->setMinPitch(-M_PI);
 
+  PRINT_INFO_NAMED(CLASS_NAME,"Terrain estimator created");
+
   gait_generator_ = std::make_shared<GaitGenerator>(robot_model_->getFootNames(),Gait::TROT);
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Gait generator created");
+
   com_planner_ = std::make_shared<ComPlanner>(robot_model_,gait_generator_,terrain_estimator_);
+
+  PRINT_INFO_NAMED(CLASS_NAME,"CoM planner created");
+
   foot_holds_planner_ = std::make_shared<FootholdsPlanner>(state_machine_,com_planner_,gait_generator_,robot_model_);
 
+  PRINT_INFO_NAMED(CLASS_NAME,"Footholds planner created");
 
   impedance_     = std::make_shared<Impedance>(state_estimator_,robot_model_);
   impedance_->startInertiaCompensation(false);
 
-  PRINT_INFO_NAMED(CLASS_NAME,"Create ID Problem...");
+  PRINT_INFO_NAMED(CLASS_NAME,"Impedance created");
+
   id_prob_ = std::make_unique<IDProblem>(robot_model_);
-  id_prob_->enableDebug(true);
-  id_prob_->setDebugMask(wolf_wbid::IDProblem::DBG_ALL);
-  PRINT_INFO_NAMED(CLASS_NAME,"...done!");
+  //id_prob_->enableDebug(true);
+  //id_prob_->setDebugMask(wolf_wbid::IDProblem::DBG_ALL);
+
+  PRINT_INFO_NAMED(CLASS_NAME,"Inverse Dynamics problem formulation created");
 
   solver_failures_cnt_   = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
   contact_failures_cnt_  = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));

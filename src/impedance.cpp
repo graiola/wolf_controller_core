@@ -53,12 +53,14 @@ Impedance::Impedance(StateEstimator::Ptr state_estimator, QuadrupedRobot::Ptr ro
 
     // Initialize the inertia related matrices
     robot_model_->getInertiaMatrix(M_);
-
     Kp_.setIdentity(M_.rows(), M_.cols());
     Kd_.setIdentity(M_.rows(), M_.cols());
 
-    robot_model_->getLimbInertiaInverse(robot_model_->getLegNames()[0],Mi_legs_); // Note: we are assuming that the legs have the same number of joints!
-    Mi_legs_.setZero();
+    if(robot_model_->getLegNames().empty()) {
+      Mi_legs_.resize(0,0);
+    } else {
+      Mi_legs_.setZero(3,3);
+    }
     Kp_swing_leg_.setZero();
     Kd_swing_leg_.setZero();
     Kp_stance_leg_.setZero();
@@ -66,8 +68,12 @@ Impedance::Impedance(StateEstimator::Ptr state_estimator, QuadrupedRobot::Ptr ro
 
     if(robot_model_->getNumberArms() >0)
     {
-      robot_model_->getLimbInertiaInverse(robot_model_->getArmNames()[0],Mi_arms_); // Note: we are assuming that the arms have the same number of joints!
-      Mi_arms_.setZero();
+      if(robot_model_->getArmNames().empty()) {
+        Mi_arms_.resize(0,0);
+      } else {
+        const auto& arm_ids = robot_model_->getLimbJointsIds(robot_model_->getArmNames()[0]);
+        Mi_arms_.setZero(static_cast<int>(arm_ids.size()), static_cast<int>(arm_ids.size()));
+      }
       Kp_arm_.setZero();
       Kd_arm_.setZero();
     }
@@ -115,9 +121,27 @@ void Impedance::update()
     loadMatrices();
 
     // Feet
-    for(unsigned int i=0;i<foot_names.size();i++)
+    if(foot_names.size() != leg_names.size())
     {
-        int idx = robot_model_->getLimbJointsIds(leg_names[i])[0]; // NOTE: take the first idx, the are contiguos
+        PRINT_WARN_NAMED(CLASS_NAME,"Foot/leg name mismatch: feet=" << foot_names.size()
+                         << " legs=" << leg_names.size());
+    }
+    for(unsigned int i=0;i<foot_names.size() && i<leg_names.size();i++)
+    {
+        const auto& limb_ids = robot_model_->getLimbJointsIds(leg_names[i]);
+        if(limb_ids.size() < 3)
+        {
+            PRINT_WARN_NAMED(CLASS_NAME,"Limb '" << leg_names[i] << "' has " << limb_ids.size()
+                             << " joints; expected 3. Skipping impedance for this limb.");
+            continue;
+        }
+        int idx = static_cast<int>(limb_ids.front()); // NOTE: take the first idx, joints are contiguous after sorting
+        if(idx < 0 || idx + 3 > Kp_.rows() || idx + 3 > Kp_.cols())
+        {
+            PRINT_WARN_NAMED(CLASS_NAME,"Invalid limb joint index range for '" << leg_names[i]
+                             << "': idx=" << idx << " Kp size=" << Kp_.rows());
+            continue;
+        }
 
         if(!state_estimator_->getContact(foot_names[i]))
         {
@@ -150,10 +174,27 @@ void Impedance::update()
     }
 
     // End-effectors
-    for(unsigned int i=0;i<ee_names.size();i++)
+    if(ee_names.size() != arm_names.size())
     {
-        int idx = robot_model_->getLimbJointsIds(arm_names[i])[0]; // NOTE: take the first idx, the joints are contiguos
-        int n   = robot_model_->getLimbJointsIds(arm_names[i]).size();
+        PRINT_WARN_NAMED(CLASS_NAME,"EE/arm name mismatch: ee=" << ee_names.size()
+                         << " arms=" << arm_names.size());
+    }
+    for(unsigned int i=0;i<ee_names.size() && i<arm_names.size();i++)
+    {
+        const auto& limb_ids = robot_model_->getLimbJointsIds(arm_names[i]);
+        int n = static_cast<int>(limb_ids.size());
+        if(n == 0)
+        {
+            PRINT_WARN_NAMED(CLASS_NAME,"Arm '" << arm_names[i] << "' has 0 joints; skipping impedance.");
+            continue;
+        }
+        int idx = static_cast<int>(limb_ids.front()); // NOTE: take the first idx, joints are contiguous after sorting
+        if(idx < 0 || idx + n > Kp_.rows() || idx + n > Kp_.cols())
+        {
+            PRINT_WARN_NAMED(CLASS_NAME,"Invalid arm joint index range for '" << arm_names[i]
+                             << "': idx=" << idx << " n=" << n << " Kp size=" << Kp_.rows());
+            continue;
+        }
 
         if(inertia_compensation_active_)
         {

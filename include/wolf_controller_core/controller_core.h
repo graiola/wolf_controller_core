@@ -23,7 +23,8 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_core/state_estimator.h>
 #include <wolf_controller_core/terrain_estimator.h>
 #include <wolf_controller_utils/tools.h>
-#include <wolf_wbid/id_problem.h>
+#include <wolf_controller_utils/filters.h>
+#include <wolf_wbid/core/id_problem.h>
 
 // Eigen
 #include <Eigen/Geometry>
@@ -494,11 +495,11 @@ private:
   /** @brief State estimator */
   StateEstimator::Ptr state_estimator_;
   /** @brief qdot_filter */
-  XBot::Utils::SecondOrderFilter<Eigen::VectorXd> qdot_filter_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::VectorXd> qdot_filter_;
   /** @brief imu_gyroscope_filter */
-  XBot::Utils::SecondOrderFilter<Eigen::Vector3d> imu_gyroscope_filter_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> imu_gyroscope_filter_;
   /** @brief imu_accelerometer filter */
-  XBot::Utils::SecondOrderFilter<Eigen::Vector3d> imu_accelerometer_filter_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> imu_accelerometer_filter_;
   /** @brief Linear and angular velocities */
   std::atomic<double> vel_x_;
   std::atomic<double> vel_y_;

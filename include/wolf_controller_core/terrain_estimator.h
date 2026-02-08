@@ -15,8 +15,9 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <memory>
 #include <map>
 #include <wolf_controller_core/state_estimator.h>
+#include <wolf_controller_utils/filters.h>
 #include <wolf_controller_utils/tools.h>
-#include <wolf_wbid/quadruped_robot.h>
+#include <wolf_wbid/core/quadruped_robot.h>
 
 namespace wolf_controller {
 
@@ -117,7 +118,7 @@ private:
     Eigen::Vector3d posture_adjustment_dot_base_;
 
     // Second-order filter for roll and pitch [roll, pitch, unused]
-    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> rpy_filter_;
+    wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> rpy_filter_;
 
     // Support values
     Eigen::Matrix3d terrain_rotation_;

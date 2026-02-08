@@ -17,9 +17,10 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_core/wpg/com_planner.h>
 #include <wolf_controller_core/state_machine.h>
 // WoLF utils
+#include <wolf_controller_utils/filters.h>
 #include <wolf_controller_utils/tools.h>
 // WoLF wbid
-#include <wolf_wbid/quadruped_robot.h>
+#include <wolf_wbid/core/quadruped_robot.h>
 
 namespace wolf_controller
 {
@@ -114,7 +115,7 @@ private:
   Eigen::Vector3d com_pos_;
   Eigen::Vector2d capture_point_;
   Eigen::Vector3d com_vel_;
-  XBot::Utils::SecondOrderFilter<Eigen::Vector3d> com_vel_filt_;
+  wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> com_vel_filt_;
   double max_delta_;
   bool push_detected_;
   std::vector<float> vertx_;
@@ -463,8 +464,8 @@ private:
     Eigen::Affine3d tmp_matrix3d_;
 
     // Filters
-    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> linear_velocity_filter_;
-    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> angular_velocity_filter_;
+    wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> linear_velocity_filter_;
+    wolf_controller_utils::SecondOrderFilter<Eigen::Vector3d> angular_velocity_filter_;
 };
 
 } // namespace

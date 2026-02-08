@@ -4,7 +4,7 @@ using namespace wolf_controller;
 
 const double ForceEstimator::DEFAULT_SVD_THRESHOLD = 0.05;
 
-ForceEstimator::ForceEstimator(XBot::ModelInterface::ConstPtr model,
+ForceEstimator::ForceEstimator(wolf_wbid::QuadrupedRobot::Ptr model,
                                double svd_threshold):
   model_(model),
   ndofs_(0)
@@ -31,9 +31,9 @@ ForceTorqueSensor::ConstPtr ForceEstimator::add_link(std::string name,
   }
 
   // chains to use for estimation if not provided
-  if(chains.size() == 0)
+  if(chains.empty())
   {
-    chains = model_->getChainNames();
+    chains = model_->getLimbNames();
   }
 
   // check dofs are valid
@@ -49,15 +49,14 @@ ForceTorqueSensor::ConstPtr ForceEstimator::add_link(std::string name,
   std::vector<int> meas_dofs;
   for(auto ch : chains)
   {
-    if(!model_->hasChain(ch))
+    const auto& limb_names = model_->getLimbNames();
+    if(std::find(limb_names.begin(), limb_names.end(), ch) == limb_names.end())
     {
       throw std::invalid_argument("Invalid chain '" + ch + "'");
     }
 
-    for(int id : model_->chain(ch).getJointIds())
-    {
-      meas_dofs.push_back(model_->getDofIndex(id));
-    }
+    const auto& ids = model_->getLimbJointsIds(ch);
+    meas_dofs.insert(meas_dofs.end(), ids.begin(), ids.end());
   }
 
   meas_idx_.insert(meas_dofs.begin(), meas_dofs.end());
@@ -85,7 +84,7 @@ ForceTorqueSensor::ConstPtr ForceEstimator::add_link(std::string name,
 
 void ForceEstimator::setIgnoredJoint(const std::string &jname)
 {
-  int idx = model_->getDofIndex(jname);
+  int idx = model_->getJointIndex(jname);
   if(idx < 0)
   {
     throw std::invalid_argument("invalid joint '" + jname + "'");
@@ -179,7 +178,7 @@ void ForceEstimator::update()
 
 
 
-ForceEstimatorMomentumBased::ForceEstimatorMomentumBased(XBot::ModelInterface::ConstPtr model,
+ForceEstimatorMomentumBased::ForceEstimatorMomentumBased(wolf_wbid::QuadrupedRobot::Ptr model,
                                                          double rate,
                                                          double svd_threshold,
                                                          double obs_bw):
