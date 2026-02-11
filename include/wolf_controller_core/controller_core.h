@@ -57,7 +57,7 @@ public:
   friend class ControllerAnomalyState;
 
   enum posture_t {UP=0,DOWN};
-  enum mode_t {WPG=0,EXT,MPC,RESET,N_MODES=4};
+  enum mode_t {WPG=0,EXT,RESET,N_MODES=3};
 
   const std::string CLASS_NAME = "ControllerCore";
 
@@ -323,7 +323,7 @@ public:
   unsigned int getControlMode();
 
   /**
-         * @brief Switch between WPG and MPC
+         * @brief Switch between WPG and EXT
          */
   void switchControlMode();
 

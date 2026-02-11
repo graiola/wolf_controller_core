@@ -50,10 +50,6 @@ std::string enumToString(ControllerCore::mode_t mode)
     ret = "EXT";
     break;
 
-  case ControllerCore::mode_t::MPC:
-    ret = "MPC";
-    break;
-
   case ControllerCore::mode_t::RESET:
     ret = "RESET";
     break;
@@ -280,8 +276,6 @@ bool ControllerCore::selectControlMode(const std::string& mode)
     requested_mode_ = ControllerCore::mode_t::WPG;
   else if(mode == "EXT")
     requested_mode_ = ControllerCore::mode_t::EXT;
-  else if(mode == "MPC")
-    requested_mode_ = ControllerCore::mode_t::MPC;
   else if(mode == "RESET")
     requested_mode_ = ControllerCore::mode_t::RESET;
   else
@@ -861,11 +855,7 @@ std::string ControllerCore::getModeAsString()
 
 std::vector<std::string> ControllerCore::getModesAsString()
 {
-  std::vector<std::string> modes;
-  for(unsigned int i=0; i< N_MODES; i++)
-    modes.push_back(enumToString(static_cast<mode_t>(i)));
-
-  return modes;
+  return {"WPG", "EXT"};
 }
 
 } //namespace

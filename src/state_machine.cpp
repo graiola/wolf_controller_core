@@ -224,12 +224,6 @@ void ControllerActiveState::updateStateMachine(StateMachine* state_machine, cons
     controller->id_prob_->setControlMode(IDProblem::mode_t::EXT);
     controller->previous_mode_ = ControllerCore::mode_t::EXT;
     break;
-  case ControllerCore::mode_t::MPC:
-    controller->foot_holds_planner_->update(dt, controller->robot_model_->getBasePoseInWorld().translation(),
-                                            controller->robot_model_->getBaseRotationInWorldRPY());
-    controller->id_prob_->setControlMode(IDProblem::mode_t::MPC);
-    controller->previous_mode_ = ControllerCore::mode_t::MPC;
-    break;
   case ControllerCore::mode_t::RESET:
     controller->foot_holds_planner_->setCmd(FootholdsPlanner::RESET_BASE);
     controller->updateWpg(dt);
