@@ -153,6 +153,7 @@ void ControllerInitState::onEntry(StateMachine *state_machine)
 void ControllerInitState::onExit(StateMachine *state_machine)
 {
   ControllerCore* controller = state_machine->getController();
+  controller->id_prob_->resetCartesianReferences();
   controller->id_prob_->reset();
   controller->state_estimator_->reset();
   ramp_->reset();
@@ -172,6 +173,7 @@ void ControllerStandingUpState::updateStateMachine(StateMachine* state_machine, 
       ramp * controller->robot_model_->getStandUpHeight();
   controller->des_joint_positions_ = ramp * controller->robot_model_->getStandUpJointPostion() +
       (1.0 - ramp) * controller->robot_model_->getStandDownJointPostion();
+
   rpy_ << 0.0, 0.0, desired_yaw_;
   rpyToRot(rpy_, R_);
   pos_ << controller->com_planner_->getComPosition().x(),
@@ -201,6 +203,7 @@ void ControllerStandingUpState::onEntry(StateMachine *state_machine)
 
 void ControllerStandingUpState::onExit(StateMachine *state_machine)
 {
+  ControllerCore* controller = state_machine->getController();
   ramp_->reset();
 }
 
@@ -259,6 +262,7 @@ void ControllerActiveState::onEntry(StateMachine *state_machine)
   pos_.setZero();
 
   ControllerCore* controller = state_machine->getController();
+  controller->id_prob_->resetCartesianReferences();
   controller->foot_holds_planner_->reset();
   controller->com_planner_->reset();
   controller->state_estimator_->startContactComputation();
