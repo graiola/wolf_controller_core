@@ -24,9 +24,7 @@ work. If not, see <http://creativecommons.org/licenses/by-nc-nd/4.0/>.
 #include <wolf_controller_utils/tools.h>
 
 // WoLF estimation
-//#include <wolf_estimation/robot_odom/robot_odom.h>
 #include <wolf_estimation/estimation/kf_estimation_pinocchio.h>
-//#include <wolf_estimation/estimation/qp_estimation.h>
 
 namespace wolf_controller
 {
@@ -47,7 +45,7 @@ public:
      */
     typedef std::shared_ptr<const StateEstimator> ConstPtr;
 
-    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER,ODOMETRY,ESTIMATED_Z};
+    enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER};
 
     StateEstimator(StateMachine::Ptr state_machine, wolf_wbid::QuadrupedRobot::Ptr robot_model);
 
@@ -187,8 +185,6 @@ private:
     Eigen::Vector3d floating_base_position_;
     /** @brief Floating base velocity w.r.t world */
     Eigen::Vector6d floating_base_velocity_;
-    /** @brief Floating base velocity, computed by the QP */
-    Eigen::VectorXd floating_base_velocity_qp_;
     /** @brief Floating base orientation w.r.t the world frame, computed by the state estimator (RPY) */
     Eigen::Vector3d floating_base_rpy_;
     /** @brief Contact estimation */
@@ -242,14 +238,8 @@ private:
 
     std::atomic<bool> use_external_contact_states_;
 
-     /** @brief Odom estimation based on qp taking in account the linear and angular velocities of the base */
-    //wolf_estimation::RobotOdomEstimator::Ptr odom_estimator_;
-
     /** @brief KF base estimation */
     wolf_estimation::KalmanFilterEstimatorInterface::Ptr kf_estimation_;
-
-    /** @brief QP base estimation */
-    //OpenSoT::FloatingBaseEstimation::Ptr qp_estimation_;
 
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;

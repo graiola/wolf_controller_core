@@ -163,7 +163,7 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
   //id_prob_->enableDebug(true);
   //id_prob_->setDebugMask(wolf_wbid::IDProblem::DBG_ALL);
 
-  PRINT_INFO_NAMED(CLASS_NAME,"Inverse Dynamics problem formulation created");
+  PRINT_INFO_NAMED(CLASS_NAME,"Inverse dynamics problem created");
 
   solver_failures_cnt_   = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
   contact_failures_cnt_  = std::make_shared<Counter>(static_cast<int>(std::ceil(0.5 / period_)));
