@@ -92,13 +92,9 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   const std::vector<std::string>& ee_names = robot_model_->getEndEffectorNames();
   const std::vector<std::string>& arm_names = robot_model_->getArmNames();
 
-  // KF estimator
-  //kf_estimation_ = std::make_shared<KalmanFilterEstimatorPinocchio>(robot_model_->getUrdfString(),
-  //                                                                 robot_model_->getSrdfString(),
-  //                                                                 wolf_controller::_period);
-  kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),
-                                                              robot_model_->getSrdfString(),
-                                                              wolf_controller::_period);
+  // The KF backend is created lazily only if a KALMAN_FILTER mode is requested.
+  // This avoids constructing the estimator when running in ground-truth / IMU-only modes.
+  kf_estimation_.reset();
 
   int n_dofs = robot_model_->getJointNum();
   joint_positions_.resize(static_cast<Eigen::Index>(n_dofs));
@@ -119,6 +115,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   imu_accelerometer_.setZero();
   contact_computation_active_ = false;
   estimated_z_ = 0.0;
+  base_height_world_logger_ = 0.0;
 
   for(unsigned int i=0;i<contact_names.size();i++)
   {
@@ -144,6 +141,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   use_external_contact_states_ = false;
 
   // Contact force estimation reset
+  PRINT_INFO_NAMED(CLASS_NAME, "Initializing force estimator");
   force_estimation_ = std::make_shared<ForceEstimatorMomentumBased>(robot_model_,1.0/_period);
   //force_estimation_ = std::make_shared<XBot::Cartesian::Utils::ForceEstimation>(robot_model_->getXBotModel());
 
@@ -183,10 +181,11 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
                      << "'. Skipping force estimation for this contact.");
   }
 #ifdef RT_LOGGER
+  PRINT_INFO_NAMED(CLASS_NAME, "Registering RT logger publishers");
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_position)   ,floating_base_position_);
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_rpy     )   ,floating_base_rpy_);
   RtLogger::getLogger().addPublisher(TOPIC(floating_base_velocity)   ,floating_base_velocity_);
-  RtLogger::getLogger().addPublisher(TOPIC(base_height           )   ,floating_base_position_(2));
+  RtLogger::getLogger().addPublisher(TOPIC(base_height           )   ,base_height_world_logger_);
 #endif
 }
 
@@ -206,7 +205,9 @@ void StateEstimator::reset()
   imu_accelerometer_.setZero();
   estimated_z_ = 0.0;
 
-  kf_estimation_->reset();
+  if(kf_estimation_) {
+    kf_estimation_->reset();
+  }
 }
 
 void StateEstimator::setEstimationType(const std::string& position_t, const std::string& orientation_t)
@@ -599,6 +600,15 @@ void StateEstimator::updateFloatingBase(const double& period)
   // Update the KF
   if(estimation_position == KALMAN_FILTER || estimation_orientation == KALMAN_FILTER)
   {
+    if(!kf_estimation_)
+    {
+      PRINT_INFO_NAMED(CLASS_NAME, "Initializing Kalman filter backend");
+      kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),
+                                                                   robot_model_->getSrdfString(),
+                                                                   wolf_controller::_period);
+      PRINT_INFO_NAMED(CLASS_NAME, "Kalman filter backend initialized");
+    }
+
     if(!kf_estimation_->isInitialized())
     {
       kf_estimation_->init(joint_positions_,joint_velocities_,floating_base_pose_);
@@ -717,6 +727,8 @@ void StateEstimator::updateFloatingBase(const double& period)
     floating_base_position_ << 0.0,0.0,0.0;
     break;
   };
+
+  base_height_world_logger_ = floating_base_position_(2);
 
   // Finally update the floating base with the full pose and velocities
   floating_base_pose_.translation() = floating_base_position_;

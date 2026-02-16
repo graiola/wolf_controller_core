@@ -432,6 +432,8 @@ private:
     map_t steps_heading_rate_;
     Eigen::Matrix3d base_rotation_reference_;
     Eigen::Vector3d base_position_reference_;
+    /** @brief Logger-friendly desired base height storage (stable address). */
+    double desired_base_height_logger_;
     Eigen::Vector3d base_linear_velocity_reference_;
     Eigen::Vector3d base_angular_velocity_reference_;
 

@@ -80,8 +80,9 @@ FootholdsPlanner::FootholdsPlanner(StateMachine::Ptr state_machine, ComPlanner::
   linear_velocity_filter_.setOmega(omega);
   angular_velocity_filter_.setOmega(omega);
   reset();
+  desired_base_height_logger_ = base_position_(2);
 #ifdef RT_LOGGER
-  RtLogger::getLogger().addPublisher(TOPIC(des_base_height),base_position_(2));
+  RtLogger::getLogger().addPublisher(TOPIC(des_base_height),desired_base_height_logger_);
 #endif
 }
 
@@ -451,6 +452,8 @@ void FootholdsPlanner::calculateBasePosition(const double& period, const Eigen::
     base_linear_velocity_reference_(2) = hf_base_linear_velocity_ref_(2) = 0.0;
     //ROS_WARN_STREAM_THROTTLE_NAMED(THROTTLE_SEC,CLASS_NAME,"Desired base height limit reached: "<<0.0);
   }
+
+  desired_base_height_logger_ = base_position_(2);
 }
 
 void FootholdsPlanner::calculateBaseOrientation(const double& period, const Eigen::Vector3d& base_orientation)

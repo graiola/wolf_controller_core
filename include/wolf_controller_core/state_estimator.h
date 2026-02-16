@@ -239,6 +239,8 @@ private:
 
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;
+    /** @brief Logger-friendly world-frame base height storage (stable address). */
+    double base_height_world_logger_;
 
     /** @brief Temporary variables */
     Eigen::Matrix3d tmp_matrix3d_;
