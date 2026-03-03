@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <assert.h>
+#include <wolf_controller_utils/namespace_utils.h>
 
 namespace wolf_controller
 {
@@ -31,25 +32,7 @@ extern std::string _robot_name;
 extern std::string _robot_model_name;
 extern std::string _tf_prefix;
 extern std::string _rt_gui_group;
-
-inline std::string normalize_namespace(std::string ns)
-{
-  while(!ns.empty() && ns.front() == '/')
-    ns.erase(ns.begin());
-  while(!ns.empty() && ns.back() == '/')
-    ns.pop_back();
-  return ns;
-}
-
-inline std::string controller_topic(const std::string& topic_name)
-{
-  const std::string ns = normalize_namespace(_robot_name);
-  if(ns.empty())
-    return "/wolf_controller/" + topic_name;
-  return "/" + ns + "/wolf_controller/" + topic_name;
-}
-
-#define TOPIC( data ) (wolf_controller::controller_topic(#data))
+#define TOPIC( data ) (wolf_controller_utils::controller_topic(_robot_name, #data))
 //#define OPEN_LOOP_TRAJECTORY
 // NOTE: by default we use the same leg order as RBDL (alphabetic order)
 extern std::vector<std::string> _dof_names;
