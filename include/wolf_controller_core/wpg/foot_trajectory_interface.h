@@ -133,10 +133,9 @@ public:
 
   void setStepReflexMaxRetraction(const double &max);
 
-protected:
+  void setLoggerSuffix(const std::string& suffix);
 
-  inline static int _id = 0;
-  int trajectory_id;
+protected:
 
   /** @brief Internal time variable */
   double time_;
@@ -188,6 +187,9 @@ private:
   TrajectoryReflex::Ptr reflex_;
   bool compute_reflex_trajectory_;
   bool activate_step_reflex_;
+#ifdef RT_LOGGER
+  bool logger_registered_;
+#endif
 };
 
 } // namespace

@@ -127,6 +127,16 @@ GaitGenerator::GaitGenerator(const std::vector<std::string>& foot_names, const G
   {
     feet_[foot_names_[i]].state_machine.reset(new FootStateMachine());
     feet_[foot_names_[i]].trajectory.reset(selectTrajectoryType(trajectory_type));
+    std::string logger_suffix = foot_names_[i];
+    for(const auto& leg_prefix : _legs_prefix)
+    {
+      if(foot_names_[i].find(leg_prefix) != std::string::npos)
+      {
+        logger_suffix = leg_prefix;
+        break;
+      }
+    }
+    feet_[foot_names_[i]].trajectory->setLoggerSuffix(logger_suffix);
     feet_[foot_names_[i]].contact        = false;
     feet_[foot_names_[i]].contact_force  = Eigen::Vector3d::Zero();
     feet_[foot_names_[i]].trigger_stance = false;

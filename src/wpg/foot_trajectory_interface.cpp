@@ -19,8 +19,7 @@ using namespace wolf_controller;
 using namespace wolf_controller_utils;
 
 TrajectoryInterface::TrajectoryInterface()
-  :trajectory_id(_id++)
-  ,activate_step_reflex_(false)
+  :activate_step_reflex_(false)
 {
   pose_reference_ = initial_pose_ = Eigen::Affine3d::Identity();
   twist_reference_.setZero();
@@ -35,8 +34,7 @@ TrajectoryInterface::TrajectoryInterface()
 
   trajectory_finished_ = true;
 #ifdef RT_LOGGER
-  RtLogger::getLogger().addPublisher(TOPIC(position_reference_)+_legs_prefix[trajectory_id],position_reference_);
-  RtLogger::getLogger().addPublisher(TOPIC(velocity_reference_)+_legs_prefix[trajectory_id],velocity_reference_);
+  logger_registered_ = false;
 #endif
 
   reflex_ = std::make_shared<TrajectoryReflex>(this);
@@ -225,6 +223,20 @@ void TrajectoryInterface::setStepReflexContactThreshold(const double &th)
 void TrajectoryInterface::setStepReflexMaxRetraction(const double &max)
 {
   reflex_->setMaxStepRetraction(max);
+}
+
+void TrajectoryInterface::setLoggerSuffix(const std::string& suffix)
+{
+#ifdef RT_LOGGER
+  if(logger_registered_ || suffix.empty())
+    return;
+
+  RtLogger::getLogger().addPublisher(TOPIC(position_reference_) + suffix, position_reference_);
+  RtLogger::getLogger().addPublisher(TOPIC(velocity_reference_) + suffix, velocity_reference_);
+  logger_registered_ = true;
+#else
+  (void)suffix;
+#endif
 }
 
 TrajectoryReflex::TrajectoryReflex(TrajectoryInterface* const trajectory_interface_ptr)
