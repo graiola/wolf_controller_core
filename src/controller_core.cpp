@@ -130,7 +130,7 @@ bool ControllerCore::init(const double& period, const std::string& urdf, const s
 
   PRINT_INFO_NAMED(CLASS_NAME,"State machine created");
 
-  state_estimator_   = std::make_shared<StateEstimator>(state_machine_,robot_model_);
+  state_estimator_   = std::make_shared<StateEstimator>(state_machine_,robot_model_, period_);
 
   PRINT_INFO_NAMED(CLASS_NAME,"State estimator created");
 

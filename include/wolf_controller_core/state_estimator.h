@@ -43,7 +43,7 @@ public:
 
     enum estimation_t {NONE=0,IMU_MAGNETOMETER,IMU_GYROSCOPE,GROUND_TRUTH,KALMAN_FILTER};
 
-    StateEstimator(StateMachine::Ptr state_machine, wolf_wbid::QuadrupedRobot::Ptr robot_model);
+    StateEstimator(StateMachine::Ptr state_machine, wolf_wbid::QuadrupedRobot::Ptr robot_model, double period);
 
     //~StateEstimator()
 
@@ -236,6 +236,9 @@ private:
 
     /** @brief KF base estimation */
     wolf_estimation::KalmanFilterEstimatorInterface::Ptr kf_estimation_;
+
+    /** @brief Estimator update period used for backend initialization. */
+    double period_;
 
     /** @brief Base estimated height wrt the feet */
     double estimated_z_;

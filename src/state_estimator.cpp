@@ -76,7 +76,7 @@ StateEstimator::estimation_t stringToEnum(const std::string& estimation)
   return ret;
 }
 
-StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::Ptr robot_model)
+StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::Ptr robot_model, double period)
 {
 
   assert(state_machine);
@@ -84,6 +84,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
 
   assert(robot_model);
   robot_model_ = robot_model;
+  period_ = period;
 
   const std::vector<std::string>& contact_names = robot_model_->getContactNames();
   const std::vector<std::string>& limb_names = robot_model_->getLimbNames();
@@ -142,7 +143,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
 
   // Contact force estimation reset
   PRINT_INFO_NAMED(CLASS_NAME, "Initializing force estimator");
-  force_estimation_ = std::make_shared<ForceEstimatorMomentumBased>(robot_model_,1.0/_period);
+  force_estimation_ = std::make_shared<ForceEstimatorMomentumBased>(robot_model_,1.0/period_);
   //force_estimation_ = std::make_shared<XBot::Cartesian::Utils::ForceEstimation>(robot_model_->getXBotModel());
 
   // Contact estimation reset
@@ -605,7 +606,7 @@ void StateEstimator::updateFloatingBase(const double& period)
       PRINT_INFO_NAMED(CLASS_NAME, "Initializing Kalman filter backend");
       kf_estimation_ = std::make_shared<KalmanFilterEstimatorRbdl>(robot_model_->getUrdfString(),
                                                                    robot_model_->getSrdfString(),
-                                                                   wolf_controller::_period);
+                                                                   period_);
       PRINT_INFO_NAMED(CLASS_NAME, "Kalman filter backend initialized");
     }
 
