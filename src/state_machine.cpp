@@ -146,6 +146,7 @@ void ControllerInitState::updateStateMachine(StateMachine* state_machine, const 
 void ControllerInitState::onEntry(StateMachine *state_machine)
 {
   ControllerCore* controller = state_machine->getController();
+  controller->joint_positions_init_ = controller->joint_positions_;
   controller->des_joint_positions_ = controller->robot_model_->getStandDownJointPostion();
   controller->des_joint_velocities_.fill(0.0);
 }
