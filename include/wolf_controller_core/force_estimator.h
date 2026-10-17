@@ -115,6 +115,7 @@ public:
     * @brief update computes the estimation and updates all registered virtual FT-sensors
     */
   void update();
+  virtual void reset() {}
 
 protected:
 
@@ -168,6 +169,7 @@ public:
                               double obs_bw = DEFAULT_OBS_BW);
 
   bool getResiduals(Eigen::VectorXd &res) const;
+  void reset() override { initMomentumObs(); }
 
 private:
 

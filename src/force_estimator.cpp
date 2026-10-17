@@ -160,12 +160,14 @@ void ForceEstimator::update()
 
     for(int i : t.dofs)
     {
-      wrench(i) = sol_(dof_idx++);
+      if (dof_idx < sol_.size() && std::isfinite(sol_(dof_idx)))
+        wrench(i) = sol_(dof_idx);
+      dof_idx++;
     }
 
-    Eigen::Matrix3d sensor_R_w;
-    model_->getOrientation(t.link_name, sensor_R_w);
-    sensor_R_w.transposeInPlace();
+    Eigen::Matrix3d sensor_R_w = Eigen::Matrix3d::Identity();
+    if (model_->getOrientation(t.link_name, sensor_R_w))
+      sensor_R_w.transposeInPlace();
 
     wrench.head<3>() = sensor_R_w * wrench.head<3>();
     wrench.tail<3>() = sensor_R_w * wrench.tail<3>();
@@ -213,6 +215,11 @@ void ForceEstimatorMomentumBased::computeResidual(Eigen::VectorXd& res)
   p2_ += (tau_ + (Mdot_ * qdot_ - coriolis_) - g_ + y_) / rate_;
 
   y_ = k_obs_*(p1_ - p2_ - p0_);
+
+  if (!p2_.allFinite() || !y_.allFinite())
+  {
+    initMomentumObs();
+  }
 
   getResiduals(res);
 

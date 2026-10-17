@@ -209,6 +209,9 @@ void StateEstimator::reset()
   if(kf_estimation_) {
     kf_estimation_->reset();
   }
+  if(force_estimation_) {
+    force_estimation_->reset();
+  }
 }
 
 void StateEstimator::setEstimationType(const std::string& position_t, const std::string& orientation_t)
@@ -531,7 +534,10 @@ void StateEstimator::updateContactState()
     {
       // If we don't have a measurement of the contact states, estimate them with a threshold
       if(!use_external_contact_states_)
-        contact_states_[foot_names[i]] = (contact_forces_[foot_names[i]].dot(terrain_normal_) >= contact_force_th_ ? true : false);
+      {
+        double fn = contact_forces_[foot_names[i]].dot(terrain_normal_);
+        contact_states_[foot_names[i]] = (std::isfinite(fn) && fn >= contact_force_th_);
+      }
     }
     else
     {
@@ -584,7 +590,19 @@ double StateEstimator::estimateZ()
     }
   }
   if(feet_in_stance!=0)
+  {
     estimated_z /= feet_in_stance;
+  }
+  else if(!foot_names.empty())
+  {
+    // Fallback: average all feet kinematic height if contact sensor/estimator has not triggered
+    for(unsigned int i = 0; i<foot_names.size(); i++)
+    {
+      tmp_affine3d_.translation() = floating_base_pose_.linear() * robot_model_->getFootPositionInBase(foot_names[i]);
+      estimated_z += tmp_affine3d_.translation().z();
+    }
+    estimated_z /= foot_names.size();
+  }
   return estimated_z;
 }
 
