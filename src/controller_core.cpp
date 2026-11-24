@@ -14,6 +14,8 @@
 #include <wolf_controller_utils/tools.h>
 #include <wolf_wbid/core/quadruped_robot_rbdl.h>
 
+#include <stdexcept>
+
 // RT GUI
 #ifdef RT_GUI
 #include <rt_gui_ros/rt_gui_client.h>
@@ -395,18 +397,16 @@ bool ControllerCore::setDutyFactor(const double& duty_factor)
 
 void ControllerCore::setJointState(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel, const Eigen::VectorXd& acc, const Eigen::VectorXd& effort)
 {
-  //joint_positions_.setZero();
-  //joint_velocities_.setZero();
-  //joint_velocities_filt_.setZero();
-  //joint_accellerations_.setZero();
-  //joint_efforts_.setZero();
-  for (int i = 0; i < n_joints_; i++)
+  const int actuated_joints = n_joints_ - FLOATING_BASE_DOFS;
+  if (actuated_joints < 0 || pos.size() != actuated_joints || vel.size() != actuated_joints ||
+      acc.size() != actuated_joints || effort.size() != actuated_joints)
   {
-    joint_positions_(i+FLOATING_BASE_DOFS) = pos(i);
-    joint_velocities_(i+FLOATING_BASE_DOFS) = vel(i);
-    joint_accellerations_(i+FLOATING_BASE_DOFS) = acc(i);
-    joint_efforts_(i+FLOATING_BASE_DOFS) = effort(i);
+    throw std::invalid_argument("setJointState requires one value per actuated joint in each input");
   }
+  joint_positions_.tail(actuated_joints) = pos;
+  joint_velocities_.tail(actuated_joints) = vel;
+  joint_accellerations_.tail(actuated_joints) = acc;
+  joint_efforts_.tail(actuated_joints) = effort;
 }
 
 void ControllerCore::setJointPosition(const unsigned int &i, const double &value)

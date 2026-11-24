@@ -106,6 +106,18 @@ if(${rt_logger_FOUND} AND WOLF_ENABLE_RT_LOGGER)
   target_link_libraries(controller_core ${rt_logger_LIBRARIES})
 endif()
 
+if(BUILD_TESTING)
+    add_executable(foot_trajectory_lifetime_test
+        test/foot_trajectory_lifetime_test.cpp
+        src/wpg/foot_trajectory_interface.cpp
+        src/wpg/foot_trajectory_ellipse.cpp)
+    target_link_libraries(foot_trajectory_lifetime_test ${wolf_controller_utils_LIBRARIES})
+    if(${rt_logger_FOUND} AND WOLF_ENABLE_RT_LOGGER)
+      target_link_libraries(foot_trajectory_lifetime_test ${rt_logger_LIBRARIES})
+    endif()
+    add_test(NAME foot_trajectory_lifetime_test COMMAND foot_trajectory_lifetime_test)
+endif()
+
 
 install(
   DIRECTORY include/${PROJECT_NAME}

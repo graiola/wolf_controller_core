@@ -101,10 +101,13 @@ public:
 
   /**
          * @brief set the joint state
-         * @param Joint positions
-         * @param Joint velocities
-         * @param Joint accelerations
-         * @param Joint efforts
+         * Each vector contains only actuated joints, in model order. Floating-base
+         * coordinates are preserved. Call after init(); a size mismatch throws
+         * std::invalid_argument before changing any state.
+         * @param pos Joint positions
+         * @param vel Joint velocities
+         * @param acc Joint accelerations
+         * @param effort Joint efforts
          */
   void setJointState(const Eigen::VectorXd& pos,
                      const Eigen::VectorXd& vel,

@@ -85,6 +85,8 @@ public:
 
   TrajectoryInterface();
 
+  virtual ~TrajectoryInterface() = default;
+
   const Eigen::Affine3d& getReference();
 
   const Eigen::Vector6d& getReferenceDot();
