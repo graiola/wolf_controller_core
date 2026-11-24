@@ -318,6 +318,10 @@ public:
          */
   unsigned int getControlMode();
 
+  // Mode transitions may wait for all feet to contact. The transport checks
+  // pending EXT requests as well as the currently executing control mode.
+  mode_t getRequestedControlMode() const { return requested_mode_.load(); }
+
   /**
          * @brief Switch between WPG and EXT
          */
@@ -509,8 +513,8 @@ private:
   std::vector<wolf_controller_utils::Counter::Ptr> velocity_lims_failures_cnt_;
   /** @brief State machine support variables */
   std::string mode_string_;
-  mode_t current_mode_;
-  mode_t requested_mode_;
+  std::atomic<mode_t> current_mode_;
+  std::atomic<mode_t> requested_mode_;
   mode_t previous_mode_;
   posture_t posture_;
   std::shared_ptr<StateMachine> state_machine_;

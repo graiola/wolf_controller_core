@@ -214,7 +214,7 @@ void ControllerActiveState::updateStateMachine(StateMachine* state_machine, cons
   ControllerCore* controller = state_machine->getController();
   if (controller->requested_mode_ != controller->current_mode_ &&
       controller->state_estimator_->areAllFeetInContact()) {
-    controller->current_mode_ = controller->requested_mode_;
+    controller->current_mode_ = controller->requested_mode_.load();
   }
 
   switch (controller->current_mode_) {

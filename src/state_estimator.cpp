@@ -6,6 +6,7 @@
  */
 
 #include <wolf_controller_core/state_estimator.h>
+#include <wolf_controller_core/contact_force_frames.h>
 #include <wolf_controller_core/common.h>
 #include <wolf_controller_utils/geometry.h>
 
@@ -122,6 +123,7 @@ StateEstimator::StateEstimator(StateMachine::Ptr state_machine, QuadrupedRobot::
   {
     contact_states_[contact_names[i]]   = true;
     contact_forces_[contact_names[i]]  = Eigen::Vector3d::Zero();
+    external_contact_forces_local_[contact_names[i]] = Eigen::Vector3d::Zero();
     world_X_contact_[contact_names[i]] = Eigen::Vector3d::Zero();
     base_X_contact_[contact_names[i]]  = Eigen::Vector3d::Zero();
   }
@@ -348,7 +350,7 @@ void StateEstimator::setContactForce(const std::string& name, const Eigen::Vecto
 
   if(contact_forces_.count(name)> 0)
   {
-    contact_forces_[name] = force;
+    external_contact_forces_local_[name] = force;
   }
   else
   {
@@ -525,10 +527,13 @@ void StateEstimator::updateContactState()
     if(!use_external_contact_forces_)
       it->second->getForce(tmp_vector3d_);
     else
-      tmp_vector3d_ = contact_forces_[foot_names[i]];
+      // Keep raw and transformed storage separate: a slower sensor update must
+      // not rotate an already-world force again on every control cycle.
+      tmp_vector3d_ = external_contact_forces_local_[foot_names[i]];
 
     // Transform the local foot force in world
-    contact_forces_[foot_names[i]] = robot_model_->getFootPoseInWorld(foot_names[i]) * tmp_vector3d_; // contact_force_world = world_T_foot * contact_force_foot
+    // A force is a vector: translating the foot must not change its force.
+    contact_forces_[foot_names[i]] = contactForceInWorld(robot_model_->getFootPoseInWorld(foot_names[i]), tmp_vector3d_);
 
     if(contact_computation_active_)
     {
@@ -561,7 +566,7 @@ void StateEstimator::updateContactState()
     }
     it->second->getForce(tmp_vector3d_); // tmp_vector3d_ = contact_force_arm
 
-    tmp_vector3d_ = robot_model_->getEndEffectorPoseInWorld(ee_names[i]) * tmp_vector3d_; // contact_force_world = world_T_ee * contact_force_ee
+    tmp_vector3d_ = contactForceInWorld(robot_model_->getEndEffectorPoseInWorld(ee_names[i]), tmp_vector3d_);
 
     if(contact_computation_active_)
       contact_states_[ee_names[i]] = (tmp_vector3d_.norm() >= contact_force_th_ ? true : false);

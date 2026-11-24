@@ -32,6 +32,13 @@ endif()
 
 # Eigen
 find_package(Eigen3 REQUIRED)
+if(BUILD_TESTING)
+    enable_testing()
+    add_executable(contact_force_frames_test test/contact_force_frames_test.cpp)
+    target_include_directories(contact_force_frames_test PRIVATE include ${EIGEN3_INCLUDE_DIRS})
+    target_compile_features(contact_force_frames_test PRIVATE cxx_std_17)
+    add_test(NAME contact_force_frames_test COMMAND contact_force_frames_test)
+endif()
 # WoLF
 find_package(wolf_wbid REQUIRED)
 find_package(wolf_estimation REQUIRED)

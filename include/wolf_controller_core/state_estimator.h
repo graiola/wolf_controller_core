@@ -195,6 +195,8 @@ private:
     std::map<std::string,bool> contact_states_;
     /** @brief Contact forces */
     std::map<std::string,Eigen::Vector3d> contact_forces_;
+    /** @brief Raw external sensor forces in each contact frame. */
+    std::map<std::string,Eigen::Vector3d> external_contact_forces_local_;
     /** @brief Contact states */
     std::map<std::string,bool> des_contact_states_;
     /** @brief Contact forces */

@@ -836,7 +836,9 @@ std::vector<bool>& ControllerCore::getDesiredContactStates()
 {
   auto foot_names = robot_model_->getFootNames();
   for(unsigned int i=0; i<foot_names.size(); i++)
-    des_contact_states_[i] = gait_generator_->isInStance(foot_names[i]);
+    des_contact_states_[i] = current_mode_ == EXT && id_prob_
+        ? id_prob_->isContactEnabled(foot_names[i])
+        : gait_generator_->isInStance(foot_names[i]);
   //auto ee_names = robot_model_->getEndEffectorNames();
   //for(unsigned int i=foot_names.size(); i<ee_names.size()+foot_names.size(); i++)
   //  des_contact_states_[i] = false;
